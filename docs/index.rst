@@ -30,6 +30,22 @@ CLI
    forge --help
    forge hello greet --name World
 
+Shell Completion
+~~~~~~~~~~~~~~~~
+
+Generate and install shell completions:
+
+.. code-block:: bash
+
+   # Bash (add to ~/.bashrc)
+   eval "$(forge completion bash)"
+
+   # Zsh (add to ~/.zshrc)
+   eval "$(forge completion zsh)"
+
+   # Fish
+   forge completion fish | source
+
 Server (REST + MCP)
 -------------------
 
