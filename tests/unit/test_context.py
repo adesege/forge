@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from forge.forgejo.context import get_repo_context, parse_remote_url
+from forge.forgejo.context import get_default_owner, get_repo_context, parse_remote_url
 
 
 class TestParseRemoteUrl:
@@ -65,3 +65,39 @@ class TestGetRepoContext:
             mock_sp.run.return_value.stdout = ""
             with pytest.raises(RuntimeError, match="Not in a git repository"):
                 get_repo_context()
+
+
+class TestGetDefaultOwner:
+    """Tests for get_default_owner."""
+
+    def test_from_env(self) -> None:
+        with patch.dict("os.environ", {"FORGE_FORGEJO__DEFAULT_OWNER": "myorg"}):
+            assert get_default_owner() == "myorg"
+
+    def test_from_config(self) -> None:
+        with patch.dict("os.environ", {}, clear=False):
+            import os
+            os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
+            with patch(
+                "click_clop.config.load_config",
+                return_value={"forgejo": {"default_owner": "config-org"}},
+            ):
+                assert get_default_owner() == "config-org"
+
+    def test_empty_when_not_set(self) -> None:
+        with patch.dict("os.environ", {}, clear=False):
+            import os
+            os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
+            with patch(
+                "click_clop.config.load_config",
+                return_value={"forgejo": {}},
+            ):
+                assert get_default_owner() == ""
+
+    def test_env_takes_precedence(self) -> None:
+        with patch.dict("os.environ", {"FORGE_FORGEJO__DEFAULT_OWNER": "env-org"}):
+            with patch(
+                "click_clop.config.load_config",
+                return_value={"forgejo": {"default_owner": "config-org"}},
+            ):
+                assert get_default_owner() == "env-org"

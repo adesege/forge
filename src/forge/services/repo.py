@@ -5,7 +5,7 @@ from __future__ import annotations
 from click_clop.service import Service
 
 from forge.forgejo import get_client
-from forge.forgejo.context import get_repo_context
+from forge.forgejo.context import get_default_owner, get_repo_context
 from forge.forgejo.formatting import format_repo, format_table
 
 
@@ -16,7 +16,9 @@ class RepoService(Service):
     description = "Manage repositories"
 
     def list(self, owner: str = "", limit: int = 30, page: int = 1) -> str:
-        """List repositories for a user or the authenticated user."""
+        """List repositories for a user/org or the authenticated user."""
+        if not owner:
+            owner = get_default_owner()
         client = get_client()
         params: dict[str, int] = {"limit": limit, "page": page}
         if owner:
@@ -51,9 +53,11 @@ class RepoService(Service):
         private: bool = False,
         org: str = "",
     ) -> str:
-        """Create a new repository."""
+        """Create a new repository. Uses default_owner from config as org if not specified."""
         if not name:
             return "Error: --name is required."
+        if not org:
+            org = get_default_owner()
         client = get_client()
         body = {
             "name": name,
@@ -67,9 +71,11 @@ class RepoService(Service):
         return f"Created repository: {data['full_name']}\n{data.get('html_url', '')}"
 
     def fork(self, owner: str = "", repo: str = "", org: str = "") -> str:
-        """Fork a repository."""
+        """Fork a repository. Uses default_owner from config as org if not specified."""
         if not owner or not repo:
             owner, repo = get_repo_context()
+        if not org:
+            org = get_default_owner()
         client = get_client()
         body: dict[str, str] = {}
         if org:

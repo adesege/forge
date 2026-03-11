@@ -18,6 +18,7 @@ otlp_endpoint = "http://localhost:4317"
 url = "https://git.app.home.southroute.com"
 token = ""
 token_op_ref = ""
+default_owner = ""
 
 [onepassword]
 vault = ""

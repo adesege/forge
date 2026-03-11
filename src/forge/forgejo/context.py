@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 
@@ -47,3 +48,20 @@ def parse_remote_url(url: str) -> tuple[str, str]:
         return https_match.group(1), https_match.group(2)
 
     raise ValueError(f"Cannot parse git remote URL: {url}")
+
+
+def get_default_owner() -> str:
+    """Return the default owner from config, or empty string if not set.
+
+    Resolution order:
+    1. FORGE_FORGEJO__DEFAULT_OWNER env var
+    2. config["forgejo"]["default_owner"]
+    """
+    env_val = os.environ.get("FORGE_FORGEJO__DEFAULT_OWNER", "")
+    if env_val:
+        return env_val
+
+    from click_clop.config import load_config
+
+    config = load_config(None, env_prefix="FORGE_")
+    return config.get("forgejo", {}).get("default_owner", "")

@@ -133,3 +133,62 @@ class TestRepoService:
         svc = RepoService(_auto_register=False)
         result = svc.search()
         assert "Error" in result
+
+    def test_create_uses_default_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.post.return_value = {
+            "full_name": "default-org/newrepo",
+            "html_url": "https://git.example.com/default-org/newrepo",
+        }
+        with patch("forge.services.repo.get_default_owner", return_value="default-org"):
+            svc = RepoService(_auto_register=False)
+            result = svc.create(name="newrepo")
+            assert "default-org/newrepo" in result
+            mock_forgejo_client.post.assert_called_once_with(
+                "/orgs/default-org/repos",
+                json={"name": "newrepo", "description": "", "private": False},
+            )
+
+    def test_create_explicit_org_overrides_default(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.post.return_value = {
+            "full_name": "explicit-org/newrepo",
+            "html_url": "https://git.example.com/explicit-org/newrepo",
+        }
+        with patch("forge.services.repo.get_default_owner", return_value="default-org"):
+            svc = RepoService(_auto_register=False)
+            result = svc.create(name="newrepo", org="explicit-org")
+            assert "explicit-org/newrepo" in result
+            mock_forgejo_client.post.assert_called_once_with(
+                "/orgs/explicit-org/repos",
+                json={"name": "newrepo", "description": "", "private": False},
+            )
+
+    def test_list_uses_default_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = [
+            {
+                "full_name": "default-org/repo1",
+                "description": "",
+                "stars_count": 0,
+                "language": "Python",
+            },
+        ]
+        with patch("forge.services.repo.get_default_owner", return_value="default-org"):
+            svc = RepoService(_auto_register=False)
+            result = svc.list()
+            assert "default-org/repo1" in result
+            mock_forgejo_client.get.assert_called_once_with(
+                "/users/default-org/repos", params={"limit": 30, "page": 1}
+            )
+
+    def test_fork_uses_default_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.post.return_value = {
+            "full_name": "default-org/forked",
+            "html_url": "https://git.example.com/default-org/forked",
+        }
+        with patch("forge.services.repo.get_default_owner", return_value="default-org"):
+            svc = RepoService(_auto_register=False)
+            result = svc.fork(owner="upstream", repo="project")
+            assert "default-org/forked" in result
+            mock_forgejo_client.post.assert_called_once_with(
+                "/repos/upstream/project/forks",
+                json={"organization": "default-org"},
+            )
