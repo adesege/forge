@@ -1,0 +1,9 @@
+# forge — Development overrides
+# These values override config.toml in development.
+
+[logging]
+level = "DEBUG"
+json_output = false
+
+[telemetry]
+enabled = false

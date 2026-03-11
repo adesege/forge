@@ -1,0 +1,18 @@
+# forge — Base configuration
+# Override with config.dev.toml, config.local.toml, or environment variables.
+# Env vars: FORGE_<SECTION>__<KEY>=value
+
+[server]
+host = "0.0.0.0"
+port = 8000
+
+[logging]
+level = "INFO"
+json_output = true
+
+[telemetry]
+enabled = true
+otlp_endpoint = "http://localhost:4317"
+
+[onepassword]
+vault = ""

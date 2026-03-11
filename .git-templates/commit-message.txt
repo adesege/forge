@@ -1,0 +1,24 @@
+@@ai@@
+# <type>(<scope>): <description>
+#
+# Types:
+#   feat:     A new feature
+#   fix:      A bug fix
+#   docs:     Documentation changes
+#   style:    Code style (formatting, semicolons, etc.)
+#   refactor: Code refactoring (no feature or fix)
+#   test:     Adding or updating tests
+#   chore:    Maintenance tasks
+#   ci:       CI/CD changes
+#   perf:     Performance improvements
+#   build:    Build system changes
+#
+# Scope: optional, describes the area of change (e.g., api, cli, helm)
+#
+# Description: imperative mood, lowercase, no period at end
+#   - "add feature" not "added feature"
+#   - "fix bug" not "fixes bug"
+#
+# Body (optional): explain the "why", not the "what"
+#
+# Footer (optional): BREAKING CHANGE:, Closes #123, Co-authored-by:
