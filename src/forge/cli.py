@@ -10,6 +10,7 @@ from click_clop.logging import setup_logging
 # Import services so they auto-register
 from forge.services import (
     auth,  # noqa: F401
+    completion,  # noqa: F401
     hello,  # noqa: F401
     issue,  # noqa: F401
     org,  # noqa: F401
