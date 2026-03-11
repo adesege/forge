@@ -42,8 +42,19 @@ src/forge/
 
 ├── secrets.py      # 1Password service
 
+├── forgejo/        # Forgejo API client library
+│   ├── client.py   # HTTP client (httpx wrapper)
+│   ├── context.py  # Git remote → owner/repo detection
+│   ├── exceptions.py # API error types
+│   └── formatting.py # Rich output formatters
 └── services/       # Business logic goes here
     ├── hello.py    # Example service
+    ├── auth.py     # Forgejo auth (status, token)
+    ├── repo.py     # Repository CRUD + search
+    ├── issue.py    # Issue management
+    ├── pr.py       # Pull request management
+    ├── release.py  # Release management
+    ├── org.py      # Organization management
     └── ...         # Add new services here
 
 tests/
@@ -227,6 +238,30 @@ This project uses **Forgejo Actions** for CI/CD. Workflows are in `.forgejo/work
 - `config.local.toml` — local overrides (gitignored)
 - Environment variables: `FORGE_<SECTION>__<KEY>=value`
 
+
+## Forgejo CLI / MCP Tools
+
+The forge CLI wraps the Forgejo API v1 (similar to GitHub's `gh` CLI). All commands are simultaneously available as CLI commands and MCP tools.
+
+**Setup:** Configure `[forgejo]` in `config.local.toml` or set `FORGE_FORGEJO__URL` / `FORGE_FORGEJO__TOKEN` env vars.
+
+**CLI usage:**
+```bash
+forge auth status                     # Check auth
+forge repo list                       # List repos
+forge issue list --state open         # List issues
+forge pr create --title "Fix" --head feature-branch
+forge release create --tag v1.0.0
+forge org list                        # List orgs
+```
+
+**MCP tool reference:** See `docs/mcp-tools.md` for full parameter documentation.
+
+**Key design notes:**
+- All repo-scoped commands infer `owner`/`repo` from git remote when omitted
+- Lists accept comma-separated strings for multi-value params (labels, assignees)
+- The `ForgejoClient` in `src/forge/forgejo/client.py` handles auth, pagination, and error mapping
+- Token resolution: env var → config.local.toml → 1Password `op read`
 
 ## Installing from Forgejo
 

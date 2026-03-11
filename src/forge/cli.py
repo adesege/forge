@@ -3,12 +3,20 @@
 from __future__ import annotations
 
 import click
-from click_clop import expose_cli, ServiceRegistry
+from click_clop import expose_cli
 from click_clop.config import load_config
 from click_clop.logging import setup_logging
 
 # Import services so they auto-register
-from forge.services import hello  # noqa: F401
+from forge.services import (
+    auth,  # noqa: F401
+    hello,  # noqa: F401
+    issue,  # noqa: F401
+    org,  # noqa: F401
+    pr,  # noqa: F401
+    release,  # noqa: F401
+    repo,  # noqa: F401
+)
 
 
 @click.group()

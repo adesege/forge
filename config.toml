@@ -14,5 +14,10 @@ json_output = true
 enabled = true
 otlp_endpoint = "http://localhost:4317"
 
+[forgejo]
+url = "https://git.app.home.southroute.com"
+token = ""
+token_op_ref = ""
+
 [onepassword]
 vault = ""
