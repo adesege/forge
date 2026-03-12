@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from forge.services.repo import RepoService
 
@@ -203,6 +203,138 @@ class TestRepoService:
             mock_forgejo_client.get.assert_called_once_with(
                 "/users/default-org/repos", params={"limit": 30, "page": 1}
             )
+
+    def test_clone_with_name(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = {
+            "full_name": "alice/myrepo",
+            "clone_url": "https://git.example.com/alice/myrepo.git",
+        }
+        svc = RepoService(_auto_register=False)
+        with patch("forge.services.repo.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = svc.clone(name="myrepo", owner="alice")
+        assert "Cloned alice/myrepo into myrepo/" in result
+        mock_forgejo_client.get.assert_called_once_with("/repos/alice/myrepo")
+        mock_run.assert_called_once_with(
+            ["git", "clone", "https://git.example.com/alice/myrepo.git", "myrepo"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_clone_with_custom_directory(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = {
+            "full_name": "alice/myrepo",
+            "clone_url": "https://git.example.com/alice/myrepo.git",
+        }
+        svc = RepoService(_auto_register=False)
+        with patch("forge.services.repo.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = svc.clone(name="myrepo", owner="alice", directory="custom-dir")
+        assert "into custom-dir/" in result
+        mock_run.assert_called_once_with(
+            ["git", "clone", "https://git.example.com/alice/myrepo.git", "custom-dir"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_clone_git_error(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = {
+            "full_name": "alice/myrepo",
+            "clone_url": "https://git.example.com/alice/myrepo.git",
+        }
+        svc = RepoService(_auto_register=False)
+        with patch("forge.services.repo.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=128, stderr="fatal: repository not found")
+            result = svc.clone(name="myrepo", owner="alice")
+        assert "Error cloning" in result
+
+    def test_clone_no_name_non_interactive(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = [
+            {
+                "full_name": "alice/repo1",
+                "description": "First repo",
+            },
+        ]
+        svc = RepoService(_auto_register=False)
+        with patch("forge.services.repo.sys") as mock_sys:
+            mock_sys.stdin.isatty.return_value = False
+            result = svc.clone(owner="alice")
+        assert "repo1" in result
+
+    def test_clone_no_name_interactive(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.side_effect = [
+            [
+                {
+                    "full_name": "alice/repo1",
+                    "name": "repo1",
+                    "description": "First",
+                    "owner": {"login": "alice"},
+                },
+                {
+                    "full_name": "alice/repo2",
+                    "name": "repo2",
+                    "description": "",
+                    "owner": {"login": "alice"},
+                },
+            ],
+            {
+                "full_name": "alice/repo2",
+                "clone_url": "https://git.example.com/alice/repo2.git",
+            },
+        ]
+        svc = RepoService(_auto_register=False)
+        with (
+            patch("forge.services.repo.sys") as mock_sys,
+            patch("forge.services.repo.IntPrompt") as mock_prompt,
+            patch("forge.services.repo.subprocess.run") as mock_run,
+            patch("forge.services.repo.Console"),
+        ):
+            mock_sys.stdin.isatty.return_value = True
+            mock_prompt.ask.return_value = 2
+            mock_run.return_value = MagicMock(returncode=0)
+            result = svc.clone(owner="alice")
+        assert "Cloned alice/repo2 into repo2/" in result
+
+    def test_clone_no_repos_found(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = []
+        svc = RepoService(_auto_register=False)
+        result = svc.clone(owner="alice")
+        assert "No repositories found" in result
+
+    def test_clone_invalid_selection(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = [
+            {
+                "full_name": "alice/repo1",
+                "name": "repo1",
+                "description": "",
+                "owner": {"login": "alice"},
+            },
+        ]
+        svc = RepoService(_auto_register=False)
+        with (
+            patch("forge.services.repo.sys") as mock_sys,
+            patch("forge.services.repo.IntPrompt") as mock_prompt,
+            patch("forge.services.repo.Console"),
+        ):
+            mock_sys.stdin.isatty.return_value = True
+            mock_prompt.ask.return_value = 99
+            result = svc.clone(owner="alice")
+        assert "Invalid selection" in result
+
+    def test_clone_uses_default_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = {
+            "full_name": "default-org/myrepo",
+            "clone_url": "https://git.example.com/default-org/myrepo.git",
+        }
+        with patch("forge.services.repo.get_default_owner", return_value="default-org"):
+            svc = RepoService(_auto_register=False)
+            with patch("forge.services.repo.subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
+                result = svc.clone(name="myrepo")
+        assert "default-org/myrepo" in result
+        mock_forgejo_client.get.assert_called_once_with("/repos/default-org/myrepo")
 
     def test_fork_uses_default_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {

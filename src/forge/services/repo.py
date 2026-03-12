@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 
 from click_clop.service import Service
+from rich.console import Console
+from rich.prompt import IntPrompt
 
 from forge.forgejo import get_client
 from forge.forgejo.context import get_default_owner, get_repo_context
@@ -105,6 +108,65 @@ class RepoService(Service):
                 check=True,
             )
 
+
+    def clone(self, name: str = "", owner: str = "", directory: str = "") -> str:
+        """Clone a repository. Shows an interactive selector if name is omitted."""
+        if not owner:
+            owner = get_default_owner()
+        client = get_client()
+
+        if not name:
+            # Fetch repos for selection
+            params: dict[str, int] = {"limit": 50}
+            if owner:
+                repos = client.get(f"/users/{owner}/repos", params=params)
+            else:
+                repos = client.get("/user/repos", params=params)
+
+            if not repos:
+                return "No repositories found."
+
+            if not sys.stdin.isatty():
+                return format_table(
+                    repos,
+                    [
+                        ("full_name", "Repository"),
+                        ("description", "Description"),
+                    ],
+                    title="Repositories (pass --name to clone)",
+                )
+
+            console = Console(stderr=True)
+            for i, r in enumerate(repos, 1):
+                desc = r.get("description", "")
+                label = f"  [bold]{i:>3}[/bold]. {r['full_name']}"
+                if desc:
+                    label += f"  [dim]— {desc}[/dim]"
+                console.print(label, highlight=False)
+
+            choice = IntPrompt.ask("\nSelect repository", default=1, console=console)
+            if choice < 1 or choice > len(repos):
+                return "Invalid selection."
+
+            selected = repos[choice - 1]
+            name = selected["name"]
+            owner = selected.get("owner", {}).get("login", owner)
+
+        data = client.get(f"/repos/{owner}/{name}")
+        clone_url = data.get("clone_url", "")
+        if not clone_url:
+            return "Error: could not determine clone URL."
+
+        target = directory or name
+        result = subprocess.run(
+            ["git", "clone", clone_url, target],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return f"Error cloning: {result.stderr.strip()}"
+        return f"Cloned {data['full_name']} into {target}/"
 
     def fork(self, owner: str = "", repo: str = "", org: str = "") -> str:
         """Fork a repository. Uses default_owner from config as org if not specified."""
