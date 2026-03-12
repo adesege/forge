@@ -133,9 +133,9 @@ def get_client() -> ForgejoClient:
 
     import os
 
-    from click_clop.config import load_config
+    from forge.config import get_config
 
-    config = load_config(None, env_prefix="FORGE_")
+    config = get_config()
     forgejo_cfg = config.get("forgejo", {})
 
     url = os.environ.get("FORGE_FORGEJO__URL", forgejo_cfg.get("url", ""))

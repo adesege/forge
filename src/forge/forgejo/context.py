@@ -61,7 +61,7 @@ def get_default_owner() -> str:
     if env_val:
         return env_val
 
-    from click_clop.config import load_config
+    from forge.config import get_config
 
-    config = load_config(None, env_prefix="FORGE_")
+    config = get_config()
     return config.get("forgejo", {}).get("default_owner", "")

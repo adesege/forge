@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
+
 from click_clop.service import Service
 
 from forge.forgejo import get_client
@@ -53,9 +56,15 @@ class RepoService(Service):
         private: bool = False,
         org: str = "",
     ) -> str:
-        """Create a new repository. Uses default_owner from config as org if not specified."""
+        """Create a new repository.
+
+        Defaults name to current directory basename.
+        Sets git origin to the new repo.
+        """
         if not name:
-            return "Error: --name is required."
+            name = os.path.basename(os.getcwd())
+        if not name:
+            return "Error: could not determine repository name."
         if not org:
             org = get_default_owner()
         client = get_client()
@@ -68,7 +77,34 @@ class RepoService(Service):
             data = client.post(f"/orgs/{org}/repos", json=body)
         else:
             data = client.post("/user/repos", json=body)
+
+        clone_url = data.get("clone_url", data.get("html_url", ""))
+        if clone_url:
+            self._set_origin(clone_url)
+
         return f"Created repository: {data['full_name']}\n{data.get('html_url', '')}"
+
+    @staticmethod
+    def _set_origin(url: str) -> None:
+        """Set or update the git remote 'origin' to the given URL."""
+        result = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            subprocess.run(
+                ["git", "remote", "set-url", "origin", url],
+                capture_output=True,
+                check=True,
+            )
+        else:
+            subprocess.run(
+                ["git", "remote", "add", "origin", url],
+                capture_output=True,
+                check=True,
+            )
+
 
     def fork(self, owner: str = "", repo: str = "", org: str = "") -> str:
         """Fork a repository. Uses default_owner from config as org if not specified."""

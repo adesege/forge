@@ -75,9 +75,14 @@ class TestRepoService:
         mock_forgejo_client.post.return_value = {
             "full_name": "user/newrepo",
             "html_url": "https://git.example.com/user/newrepo",
+            "clone_url": "https://git.example.com/user/newrepo.git",
         }
         svc = RepoService(_auto_register=False)
-        result = svc.create(name="newrepo", description="new", private=True)
+        with patch.object(svc, "_set_origin") as mock_origin:
+            result = svc.create(name="newrepo", description="new", private=True)
+            mock_origin.assert_called_once_with(
+                "https://git.example.com/user/newrepo.git"
+            )
         assert "user/newrepo" in result
         mock_forgejo_client.post.assert_called_once_with(
             "/user/repos",
@@ -88,16 +93,32 @@ class TestRepoService:
         mock_forgejo_client.post.return_value = {
             "full_name": "myorg/newrepo",
             "html_url": "https://git.example.com/myorg/newrepo",
+            "clone_url": "https://git.example.com/myorg/newrepo.git",
         }
         svc = RepoService(_auto_register=False)
-        result = svc.create(name="newrepo", org="myorg")
+        with patch.object(svc, "_set_origin"):
+            result = svc.create(name="newrepo", org="myorg")
         assert "myorg/newrepo" in result
         mock_forgejo_client.post.assert_called_once()
 
-    def test_create_no_name(self) -> None:
+    def test_create_defaults_name_to_cwd_basename(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.post.return_value = {
+            "full_name": "user/myproject",
+            "html_url": "https://git.example.com/user/myproject",
+            "clone_url": "https://git.example.com/user/myproject.git",
+        }
         svc = RepoService(_auto_register=False)
-        result = svc.create()
-        assert "Error" in result
+        with (
+            patch("forge.services.repo.os.getcwd", return_value="/home/user/myproject"),
+            patch("forge.services.repo.get_default_owner", return_value=""),
+            patch.object(svc, "_set_origin"),
+        ):
+            result = svc.create()
+        assert "myproject" in result
+        mock_forgejo_client.post.assert_called_once_with(
+            "/user/repos",
+            json={"name": "myproject", "description": "", "private": False},
+        )
 
     def test_fork(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {
@@ -138,10 +159,12 @@ class TestRepoService:
         mock_forgejo_client.post.return_value = {
             "full_name": "default-org/newrepo",
             "html_url": "https://git.example.com/default-org/newrepo",
+            "clone_url": "https://git.example.com/default-org/newrepo.git",
         }
         with patch("forge.services.repo.get_default_owner", return_value="default-org"):
             svc = RepoService(_auto_register=False)
-            result = svc.create(name="newrepo")
+            with patch.object(svc, "_set_origin"):
+                result = svc.create(name="newrepo")
             assert "default-org/newrepo" in result
             mock_forgejo_client.post.assert_called_once_with(
                 "/orgs/default-org/repos",
@@ -152,10 +175,12 @@ class TestRepoService:
         mock_forgejo_client.post.return_value = {
             "full_name": "explicit-org/newrepo",
             "html_url": "https://git.example.com/explicit-org/newrepo",
+            "clone_url": "https://git.example.com/explicit-org/newrepo.git",
         }
         with patch("forge.services.repo.get_default_owner", return_value="default-org"):
             svc = RepoService(_auto_register=False)
-            result = svc.create(name="newrepo", org="explicit-org")
+            with patch.object(svc, "_set_origin"):
+                result = svc.create(name="newrepo", org="explicit-org")
             assert "explicit-org/newrepo" in result
             mock_forgejo_client.post.assert_called_once_with(
                 "/orgs/explicit-org/repos",
