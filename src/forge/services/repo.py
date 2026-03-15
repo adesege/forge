@@ -81,9 +81,9 @@ class RepoService(Service):
         else:
             data = client.post("/user/repos", json=body)
 
-        clone_url = data.get("clone_url", data.get("html_url", ""))
-        if clone_url:
-            self._set_origin(clone_url)
+        origin_url = data.get("ssh_url", data.get("clone_url", ""))
+        if origin_url:
+            self._set_origin(origin_url)
 
         return f"Created repository: {data['full_name']}\n{data.get('html_url', '')}"
 
@@ -153,7 +153,7 @@ class RepoService(Service):
             owner = selected.get("owner", {}).get("login", owner)
 
         data = client.get(f"/repos/{owner}/{name}")
-        clone_url = data.get("clone_url", "")
+        clone_url = data.get("ssh_url", data.get("clone_url", ""))
         if not clone_url:
             return "Error: could not determine clone URL."
 
