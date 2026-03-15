@@ -11,7 +11,6 @@ from click_clop.service import ServiceRegistry
 
 from forge.services import auth as _auth_mod
 from forge.services import completion as _completion_mod
-from forge.services import hello as _hello_mod
 from forge.services import issue as _issue_mod
 from forge.services import org as _org_mod
 from forge.services import pr as _pr_mod
@@ -19,7 +18,6 @@ from forge.services import release as _release_mod
 from forge.services import repo as _repo_mod
 
 _SERVICE_MODULES = [
-    _hello_mod,
     _auth_mod,
     _completion_mod,
     _repo_mod,

@@ -11,7 +11,6 @@ from fastmcp import FastMCP
 # Import services so they auto-register
 from forge.services import (
     auth,  # noqa: F401
-    hello,  # noqa: F401
     issue,  # noqa: F401
     org,  # noqa: F401
     pr,  # noqa: F401
