@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# prepare-commit-msg hook: invoke git-good to replace @@ai@@ with AI-generated text.
+# Since core.hooksPath is set to .git-hooks/, global git-good hooks are overridden.
+# This hook re-establishes the chain so `git good yolo` works out-of-the-box.
+
+if command -v git-good >/dev/null 2>&1; then
+    git-good hook "$@"
+fi

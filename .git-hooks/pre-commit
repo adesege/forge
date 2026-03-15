@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit hook: lint and run unit tests before committing.
+# Pre-commit hook: lint, test, and optionally bump version.
 set -euo pipefail
 
 echo "==> Running ruff check..."
@@ -9,3 +9,38 @@ echo "==> Running unit tests..."
 uv run pytest tests/unit -q --tb=short
 
 echo "==> Pre-commit checks passed."
+
+# ── Version bump prompt ─────────────────────────────────────
+# Prompts via /dev/tty so it works even when stdin is piped (e.g. git good yolo).
+# Skipped silently in non-interactive environments (CI, scripts).
+
+BUMP=""
+if [ -e /dev/tty ]; then
+    printf "\nVersion bump? (M)ajor / (m)inor / (n)o [n]: " > /dev/tty
+    read -r BUMP < /dev/tty 2>/dev/null || true
+fi
+
+case "${BUMP:-n}" in
+    M) BUMP_TYPE="major" ;;
+    m) BUMP_TYPE="minor" ;;
+    *)  BUMP_TYPE="" ;;
+esac
+
+if [ -n "$BUMP_TYPE" ]; then
+    CURRENT=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+    IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+    case "$BUMP_TYPE" in
+        major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+        minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+    esac
+
+    NEW="${MAJOR}.${MINOR}.${PATCH}"
+    sed -i "s/^version = \".*\"/version = \"${NEW}\"/" pyproject.toml
+    git add pyproject.toml
+
+    echo "==> Version bumped: ${CURRENT} → ${NEW}"
+
+    # Signal post-commit hook to create an annotated tag
+    echo "$NEW" > "$(git rev-parse --git-dir)/BUMP_VERSION"
+fi

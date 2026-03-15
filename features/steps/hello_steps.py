@@ -1,13 +1,13 @@
 """Step definitions for the hello feature."""
 
-from behave import when, then
+from behave import then, when
 from click.testing import CliRunner
-
 from click_clop.service import ServiceRegistry
+
+from forge.cli import main
 
 # Import to trigger registration
 from forge.services import hello  # noqa: F401
-from forge.cli import main
 
 
 @when('I call the greet service')

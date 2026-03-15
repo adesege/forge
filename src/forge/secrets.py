@@ -6,7 +6,6 @@ through the service layer as CLI commands, MCP tools, and REST endpoints.
 
 from __future__ import annotations
 
-from click_clop.service import Service
 from click_clop.secrets import (
     SecretField,
     check_op_available,
@@ -15,8 +14,8 @@ from click_clop.secrets import (
     ensure_secret,
     get_secret,
     get_secret_field,
-    update_secret,
 )
+from click_clop.service import Service
 
 
 class SecretsService(Service):
