@@ -19,8 +19,9 @@ class TestRepoService:
                 "language": "Python",
             },
         ]
-        svc = RepoService(_auto_register=False)
-        result = svc.list()
+        with patch("forge.services.repo.get_default_owner", return_value=""):
+            svc = RepoService(_auto_register=False)
+            result = svc.list()
         assert "user/repo1" in result
         mock_forgejo_client.get.assert_called_once_with(
             "/user/repos", params={"limit": 30, "page": 1}
@@ -77,12 +78,13 @@ class TestRepoService:
             "html_url": "https://git.example.com/user/newrepo",
             "clone_url": "https://git.example.com/user/newrepo.git",
         }
-        svc = RepoService(_auto_register=False)
-        with patch.object(svc, "_set_origin") as mock_origin:
-            result = svc.create(name="newrepo", description="new", private=True)
-            mock_origin.assert_called_once_with(
-                "https://git.example.com/user/newrepo.git"
-            )
+        with patch("forge.services.repo.get_default_owner", return_value=""):
+            svc = RepoService(_auto_register=False)
+            with patch.object(svc, "_set_origin") as mock_origin:
+                result = svc.create(name="newrepo", description="new", private=True)
+                mock_origin.assert_called_once_with(
+                    "https://git.example.com/user/newrepo.git"
+                )
         assert "user/newrepo" in result
         mock_forgejo_client.post.assert_called_once_with(
             "/user/repos",

@@ -26,7 +26,7 @@ class TestAuthService:
         with (
             patch.dict("os.environ", {"FORGE_FORGEJO__TOKEN": "secret1234567890"}),
             patch(
-                "click_clop.config.load_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"token": ""}},
             ),
         ):
@@ -39,7 +39,7 @@ class TestAuthService:
         with (
             patch.dict("os.environ", {}, clear=True),
             patch(
-                "click_clop.config.load_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"token": "abcdef1234"}},
             ),
         ):
@@ -52,7 +52,7 @@ class TestAuthService:
         with (
             patch.dict("os.environ", {}, clear=True),
             patch(
-                "click_clop.config.load_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {}},
             ),
         ):

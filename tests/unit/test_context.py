@@ -79,7 +79,7 @@ class TestGetDefaultOwner:
             import os
             os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
             with patch(
-                "click_clop.config.load_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"default_owner": "config-org"}},
             ):
                 assert get_default_owner() == "config-org"
@@ -89,7 +89,7 @@ class TestGetDefaultOwner:
             import os
             os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
             with patch(
-                "click_clop.config.load_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {}},
             ):
                 assert get_default_owner() == ""
@@ -97,7 +97,7 @@ class TestGetDefaultOwner:
     def test_env_takes_precedence(self) -> None:
         with patch.dict("os.environ", {"FORGE_FORGEJO__DEFAULT_OWNER": "env-org"}):
             with patch(
-                "click_clop.config.load_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"default_owner": "config-org"}},
             ):
                 assert get_default_owner() == "env-org"
