@@ -80,16 +80,38 @@ class TestRepoService:
         }
         with patch("forge.services.repo.get_default_owner", return_value=""):
             svc = RepoService(_auto_register=False)
-            with patch.object(svc, "_set_origin") as mock_origin:
+            with (
+                patch.object(svc, "_resolve_remote_name", return_value="origin") as mock_resolve,
+                patch.object(svc, "_add_remote") as mock_add,
+            ):
                 result = svc.create(name="newrepo", description="new", private=True)
-                mock_origin.assert_called_once_with(
+                mock_resolve.assert_called_once_with(
                     "https://git.example.com/user/newrepo.git"
+                )
+                mock_add.assert_called_once_with(
+                    "origin", "https://git.example.com/user/newrepo.git"
                 )
         assert "user/newrepo" in result
         mock_forgejo_client.post.assert_called_once_with(
             "/user/repos",
             json={"name": "newrepo", "description": "new", "private": True},
         )
+
+    def test_create_skips_remote_when_resolve_returns_none(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.post.return_value = {
+            "full_name": "user/newrepo",
+            "html_url": "https://git.example.com/user/newrepo",
+            "clone_url": "https://git.example.com/user/newrepo.git",
+        }
+        with patch("forge.services.repo.get_default_owner", return_value=""):
+            svc = RepoService(_auto_register=False)
+            with (
+                patch.object(svc, "_resolve_remote_name", return_value=None),
+                patch.object(svc, "_add_remote") as mock_add,
+            ):
+                result = svc.create(name="newrepo")
+                mock_add.assert_not_called()
+        assert "user/newrepo" in result
 
     def test_create_in_org(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {
@@ -98,7 +120,10 @@ class TestRepoService:
             "clone_url": "https://git.example.com/myorg/newrepo.git",
         }
         svc = RepoService(_auto_register=False)
-        with patch.object(svc, "_set_origin"):
+        with (
+            patch.object(svc, "_resolve_remote_name", return_value="origin"),
+            patch.object(svc, "_add_remote"),
+        ):
             result = svc.create(name="newrepo", org="myorg")
         assert "myorg/newrepo" in result
         mock_forgejo_client.post.assert_called_once()
@@ -113,7 +138,8 @@ class TestRepoService:
         with (
             patch("forge.services.repo.os.getcwd", return_value="/home/user/myproject"),
             patch("forge.services.repo.get_default_owner", return_value=""),
-            patch.object(svc, "_set_origin"),
+            patch.object(svc, "_resolve_remote_name", return_value="origin"),
+            patch.object(svc, "_add_remote"),
         ):
             result = svc.create()
         assert "myproject" in result
@@ -165,7 +191,10 @@ class TestRepoService:
         }
         with patch("forge.services.repo.get_default_owner", return_value="default-org"):
             svc = RepoService(_auto_register=False)
-            with patch.object(svc, "_set_origin"):
+            with (
+                patch.object(svc, "_resolve_remote_name", return_value="origin"),
+                patch.object(svc, "_add_remote"),
+            ):
                 result = svc.create(name="newrepo")
             assert "default-org/newrepo" in result
             mock_forgejo_client.post.assert_called_once_with(
@@ -181,7 +210,10 @@ class TestRepoService:
         }
         with patch("forge.services.repo.get_default_owner", return_value="default-org"):
             svc = RepoService(_auto_register=False)
-            with patch.object(svc, "_set_origin"):
+            with (
+                patch.object(svc, "_resolve_remote_name", return_value="origin"),
+                patch.object(svc, "_add_remote"),
+            ):
                 result = svc.create(name="newrepo", org="explicit-org")
             assert "explicit-org/newrepo" in result
             mock_forgejo_client.post.assert_called_once_with(
@@ -337,6 +369,61 @@ class TestRepoService:
                 result = svc.clone(name="myrepo")
         assert "default-org/myrepo" in result
         mock_forgejo_client.get.assert_called_once_with("/repos/default-org/myrepo")
+
+    def test_resolve_remote_name_no_origin(self) -> None:
+        svc = RepoService(_auto_register=False)
+        with patch.object(svc, "_get_existing_origin", return_value=None):
+            assert svc._resolve_remote_name("git@example.com:user/repo.git") == "origin"
+
+    def test_resolve_remote_name_origin_exists_overwrite(self) -> None:
+        svc = RepoService(_auto_register=False)
+        with (
+            patch.object(svc, "_get_existing_origin", return_value="git@old.com:x/y.git"),
+            patch("forge.services.repo.sys") as mock_sys,
+            patch("forge.services.repo.Prompt") as mock_prompt,
+            patch("forge.services.repo.Console"),
+        ):
+            mock_sys.stdin.isatty.return_value = True
+            mock_prompt.ask.return_value = "overwrite"
+            result = svc._resolve_remote_name("git@new.com:user/repo.git")
+        assert result == "origin"
+
+    def test_resolve_remote_name_origin_exists_different(self) -> None:
+        svc = RepoService(_auto_register=False)
+        with (
+            patch.object(svc, "_get_existing_origin", return_value="git@old.com:x/y.git"),
+            patch("forge.services.repo.sys") as mock_sys,
+            patch("forge.services.repo.Prompt") as mock_prompt,
+            patch("forge.services.repo.Console"),
+        ):
+            mock_sys.stdin.isatty.return_value = True
+            mock_prompt.ask.side_effect = ["different", "upstream"]
+            result = svc._resolve_remote_name("git@new.com:user/repo.git")
+        assert result == "upstream"
+
+    def test_resolve_remote_name_origin_exists_skip(self) -> None:
+        svc = RepoService(_auto_register=False)
+        with (
+            patch.object(svc, "_get_existing_origin", return_value="git@old.com:x/y.git"),
+            patch("forge.services.repo.sys") as mock_sys,
+            patch("forge.services.repo.Prompt") as mock_prompt,
+            patch("forge.services.repo.Console"),
+        ):
+            mock_sys.stdin.isatty.return_value = True
+            mock_prompt.ask.return_value = "skip"
+            result = svc._resolve_remote_name("git@new.com:user/repo.git")
+        assert result is None
+
+    def test_resolve_remote_name_origin_exists_non_interactive(self) -> None:
+        svc = RepoService(_auto_register=False)
+        with (
+            patch.object(svc, "_get_existing_origin", return_value="git@old.com:x/y.git"),
+            patch("forge.services.repo.sys") as mock_sys,
+            patch("forge.services.repo.Console"),
+        ):
+            mock_sys.stdin.isatty.return_value = False
+            result = svc._resolve_remote_name("git@new.com:user/repo.git")
+        assert result is None
 
     def test_fork_uses_default_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {

@@ -8,7 +8,7 @@ import sys
 
 from click_clop.service import Service
 from rich.console import Console
-from rich.prompt import IntPrompt
+from rich.prompt import IntPrompt, Prompt
 
 from forge.forgejo import get_client
 from forge.forgejo.context import get_default_owner, get_repo_context
@@ -62,7 +62,8 @@ class RepoService(Service):
         """Create a new repository.
 
         Defaults name to current directory basename.
-        Sets git origin to the new repo.
+        Sets git origin to the new repo. If origin already exists,
+        prompts to overwrite or use a different remote name.
         """
         if not name:
             name = os.path.basename(os.getcwd())
@@ -83,27 +84,78 @@ class RepoService(Service):
 
         origin_url = data.get("ssh_url", data.get("clone_url", ""))
         if origin_url:
-            self._set_origin(origin_url)
+            remote_name = self._resolve_remote_name(origin_url)
+            if remote_name:
+                self._add_remote(remote_name, origin_url)
 
         return f"Created repository: {data['full_name']}\n{data.get('html_url', '')}"
 
     @staticmethod
-    def _set_origin(url: str) -> None:
-        """Set or update the git remote 'origin' to the given URL."""
+    def _get_existing_origin() -> str | None:
+        """Return the current origin URL, or None if origin is not set."""
         result = subprocess.run(
             ["git", "remote", "get-url", "origin"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        return None
+
+    def _resolve_remote_name(self, url: str) -> str | None:
+        """Determine which remote name to use for the new repo URL.
+
+        Returns the remote name to use, or None to skip adding a remote.
+        """
+        existing_url = self._get_existing_origin()
+        if existing_url is None:
+            return "origin"
+
+        if not sys.stdin.isatty():
+            console = Console(stderr=True)
+            console.print(
+                f"[yellow]Warning:[/yellow] origin already set to {existing_url}. "
+                "Skipping remote setup (not interactive).",
+                highlight=False,
+            )
+            return None
+
+        console = Console(stderr=True)
+        console.print(
+            f"\n[yellow]Origin already set to:[/yellow] {existing_url}",
+            highlight=False,
+        )
+        choice = Prompt.ask(
+            "[bold]Overwrite[/bold], use a [bold]different[/bold] name, or [bold]skip[/bold]?",
+            choices=["overwrite", "different", "skip"],
+            default="skip",
+            console=console,
+        )
+        if choice == "overwrite":
+            return "origin"
+        if choice == "different":
+            remote_name = Prompt.ask("Remote name", default="forge", console=console)
+            return remote_name
+        return None
+
+    @staticmethod
+    def _add_remote(remote_name: str, url: str) -> None:
+        """Add or update a git remote to the given URL."""
+        result = subprocess.run(
+            ["git", "remote", "get-url", remote_name],
             capture_output=True,
             check=False,
         )
         if result.returncode == 0:
             subprocess.run(
-                ["git", "remote", "set-url", "origin", url],
+                ["git", "remote", "set-url", remote_name, url],
                 capture_output=True,
                 check=True,
             )
         else:
             subprocess.run(
-                ["git", "remote", "add", "origin", url],
+                ["git", "remote", "add", remote_name, url],
                 capture_output=True,
                 check=True,
             )
