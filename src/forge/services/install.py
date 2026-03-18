@@ -24,9 +24,10 @@ def _get_forgejo_url() -> str:
     return _get_forgejo_config().get("url", "https://git.app.home.southroute.com")
 
 
-def _get_default_owner() -> str:
-    """Get the default package owner from config."""
-    return _get_forgejo_config().get("default_owner", "")
+def _get_package_owner() -> str:
+    """Get the package registry owner from config (falls back to default_owner)."""
+    cfg = _get_forgejo_config()
+    return cfg.get("package_owner", "") or cfg.get("default_owner", "")
 
 
 def _get_forgejo_token() -> str:
@@ -88,9 +89,9 @@ class InstallService(Service):
     def pypi(self, owner: str = "") -> str:
         """Add the Forgejo PyPI index to uv's global configuration."""
         if not owner:
-            owner = _get_default_owner()
+            owner = _get_package_owner()
         if not owner:
-            return "Error: no owner specified and no default_owner in config."
+            return "Error: no owner specified and no package_owner/default_owner in config."
 
         forgejo_url = _get_forgejo_url()
         pypi_url = f"{forgejo_url}/api/packages/{owner}/pypi/simple/"
@@ -126,9 +127,9 @@ class InstallService(Service):
             return f"Error: not a Debian-based system (ID={os_id})."
 
         if not owner:
-            owner = _get_default_owner()
+            owner = _get_package_owner()
         if not owner:
-            return "Error: no owner specified and no default_owner in config."
+            return "Error: no owner specified and no package_owner/default_owner in config."
 
         if not codename:
             codename = os_info.get("VERSION_CODENAME", "")

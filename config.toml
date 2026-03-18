@@ -19,6 +19,7 @@ url = "https://git.app.home.southroute.com"
 token = "1e9938c53e6c576b40ed3dd2db8f8aad83445074"
 token_op_ref = ""
 default_owner = "southroute"
+package_owner = "bayne"
 
 [onepassword]
 vault = ""
