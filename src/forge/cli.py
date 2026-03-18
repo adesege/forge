@@ -7,8 +7,7 @@ from click_clop import expose_cli
 from click_clop.config import load_config
 from click_clop.logging import setup_logging
 
-# Import service modules here so they auto-register, e.g.:
-#   from forge.services import my_service  # noqa: F401
+import forge.services  # noqa: F401 — triggers auto-registration
 
 
 @click.group()
