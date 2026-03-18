@@ -118,6 +118,8 @@ build-deb: build ## Build Debian package from wheel
 
 FORGEJO_HOST ?= git.app.home.southroute.com
 PACKAGE_OWNER ?= bayne
+DEB_DISTRIBUTION ?= trixie
+DEB_COMPONENT ?= main
 # Token lookup order (last wins): ~/.config/click-clop/config.toml → project config.toml → config.local.toml.
 # Put your actual token in config.local.toml (gitignored) or ~/.config/click-clop/config.toml.
 # Override: make publish-pypi FORGEJO_TOKEN=<token>
@@ -141,7 +143,7 @@ publish-deb: build-deb ## Upload Debian package to Forgejo registry
 		-H "Authorization: token $(FORGEJO_TOKEN)" \
 		-H "Content-Type: application/octet-stream" \
 		--upload-file "$${DEB_FILE}" \
-		"https://$(FORGEJO_HOST)/api/packages/$(PACKAGE_OWNER)/debian/pool/trixie/main/upload"
+		"https://$(FORGEJO_HOST)/api/packages/$(PACKAGE_OWNER)/debian/pool/$(DEB_DISTRIBUTION)/$(DEB_COMPONENT)/upload"
 
 
 .PHONY: publish-all

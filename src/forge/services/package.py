@@ -184,6 +184,38 @@ class PackageService(Service):
         )
         return f"Published {filename} to {name}/{version}"
 
+    def publish_deb(
+        self,
+        file: str = "",
+        owner: str = "",
+        distribution: str = "trixie",
+        component: str = "main",
+    ) -> str:
+        """Publish a .deb package to the Forgejo Debian registry.
+
+        Args:
+            file: Path to the .deb file to upload.
+            owner: Package owner. Inferred from config if omitted.
+            distribution: Debian distribution (e.g. trixie, bookworm, noble).
+            component: Repository component (e.g. main, contrib, non-free).
+        """
+        if not owner:
+            owner = get_default_owner()
+        if not file:
+            return "Error: --file is required."
+        if not os.path.isfile(file):
+            return f"Error: file not found: {file}"
+        filename = os.path.basename(file)
+        with open(file, "rb") as f:
+            content = f.read()
+        client = get_client()
+        client.put_file(
+            f"/api/packages/{owner}/debian/pool/{distribution}/{component}/upload",
+            content=content,
+        )
+        return f"Published {filename} to debian pool {distribution}/{component}"
+
+
     def download(
         self,
         name: str = "",

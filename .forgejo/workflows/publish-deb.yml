@@ -8,6 +8,8 @@ on:
 env:
   FORGEJO_HOST: git.app.home.southroute.com
   PACKAGE_OWNER: bayne
+  DEB_DISTRIBUTION: trixie
+  DEB_COMPONENT: main
 
 jobs:
   publish-deb:
@@ -43,5 +45,5 @@ jobs:
             -H "Authorization: token ${{ github.token }}" \
             -H "Content-Type: application/octet-stream" \
             --upload-file "${DEB_FILE}" \
-            "https://${FORGEJO_HOST}/api/packages/${PACKAGE_OWNER}/debian/pool/trixie/main/upload"
+            "https://${FORGEJO_HOST}/api/packages/${PACKAGE_OWNER}/debian/pool/${DEB_DISTRIBUTION}/${DEB_COMPONENT}/upload"
 

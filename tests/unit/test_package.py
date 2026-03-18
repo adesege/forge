@@ -148,3 +148,42 @@ class TestPackageService:
         svc = PackageService(_auto_register=False)
         result = svc.download(name="pkg", version="1.0.0", owner="o")
         assert "Error" in result
+
+    def test_publish_deb(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
+        deb_file = tmp_path / "forge_1.0.0_all.deb"
+        deb_file.write_bytes(b"deb-content")
+        mock_forgejo_client.put_file.return_value = None
+        svc = PackageService(_auto_register=False)
+        result = svc.publish_deb(file=str(deb_file), owner="o")
+        assert "Published" in result
+        assert "trixie/main" in result
+        mock_forgejo_client.put_file.assert_called_once_with(
+            "/api/packages/o/debian/pool/trixie/main/upload",
+            content=b"deb-content",
+        )
+
+    def test_publish_deb_custom_pool(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
+        deb_file = tmp_path / "forge_1.0.0_all.deb"
+        deb_file.write_bytes(b"deb-content")
+        mock_forgejo_client.put_file.return_value = None
+        svc = PackageService(_auto_register=False)
+        result = svc.publish_deb(
+            file=str(deb_file), owner="o", distribution="bookworm", component="contrib"
+        )
+        assert "Published" in result
+        assert "bookworm/contrib" in result
+        mock_forgejo_client.put_file.assert_called_once_with(
+            "/api/packages/o/debian/pool/bookworm/contrib/upload",
+            content=b"deb-content",
+        )
+
+    def test_publish_deb_missing_file(self) -> None:
+        svc = PackageService(_auto_register=False)
+        result = svc.publish_deb(owner="o")
+        assert "Error" in result
+
+    def test_publish_deb_file_not_found(self) -> None:
+        svc = PackageService(_auto_register=False)
+        result = svc.publish_deb(file="/nonexistent/file.deb", owner="o")
+        assert "Error" in result
+        assert "not found" in result
