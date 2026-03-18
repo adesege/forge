@@ -2,25 +2,49 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import tomllib
 from pathlib import Path
+from urllib.parse import urlparse
 
 from click_clop.service import Service
 
 from forge.config import get_config
 
 
+def _get_forgejo_config() -> dict[str, str]:
+    """Get the forgejo config section."""
+    config = get_config()
+    return config.get("forgejo", {})
+
+
 def _get_forgejo_url() -> str:
     """Get the configured Forgejo instance URL."""
-    config = get_config()
-    return config.get("forgejo", {}).get("url", "https://git.app.home.southroute.com")
+    return _get_forgejo_config().get("url", "https://git.app.home.southroute.com")
 
 
 def _get_default_owner() -> str:
     """Get the default package owner from config."""
-    config = get_config()
-    return config.get("forgejo", {}).get("default_owner", "")
+    return _get_forgejo_config().get("default_owner", "")
+
+
+def _get_forgejo_token() -> str:
+    """Resolve the Forgejo API token (same order as ForgejoClient)."""
+    forgejo_cfg = _get_forgejo_config()
+    token = os.environ.get("FORGE_FORGEJO__TOKEN", forgejo_cfg.get("token", ""))
+    if not token:
+        op_ref = forgejo_cfg.get("token_op_ref", "")
+        if op_ref:
+            result = subprocess.run(
+                ["op", "read", op_ref],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode == 0:
+                token = result.stdout.strip()
+    return token
 
 
 def _serialize_toml(data: dict[str, object]) -> str:
@@ -111,16 +135,48 @@ class InstallService(Service):
         if not codename:
             return "Error: could not detect version codename from /etc/os-release."
 
+        token = _get_forgejo_token()
+        if not token:
+            return "Error: no Forgejo token configured. Debian registry requires authentication."
+
         forgejo_url = _get_forgejo_url()
         repo_url = f"{forgejo_url}/api/packages/{owner}/debian"
-        sources_line = f"deb {repo_url} {codename} main"
+        # [trusted=yes] because Forgejo package registries are not GPG-signed
+        sources_line = f"deb [trusted=yes] {repo_url} {codename} main"
         sources_file = Path("/etc/apt/sources.list.d/forgejo.list")
+        auth_file = Path("/etc/apt/auth.conf.d/forgejo.conf")
+
+        # Set up apt authentication via auth.conf.d (keeps token out of sources.list)
+        host = urlparse(forgejo_url).hostname or ""
+        auth_content = (
+            f"machine {host}\n"
+            f"login _token\n"
+            f"password {token}\n"
+        )
 
         if sources_file.exists():
             existing = sources_file.read_text()
             if sources_line in existing:
                 return f"Already configured: {sources_line}"
 
+        # Write auth credentials
+        try:
+            subprocess.run(
+                ["sudo", "tee", str(auth_file)],
+                input=auth_content,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            subprocess.run(
+                ["sudo", "chmod", "600", str(auth_file)],
+                capture_output=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            return f"Error writing {auth_file}: {e.stderr.strip()}"
+
+        # Write sources list
         try:
             subprocess.run(
                 ["sudo", "tee", str(sources_file)],
