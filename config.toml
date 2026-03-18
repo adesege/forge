@@ -16,9 +16,9 @@ otlp_endpoint = "http://localhost:4317"
 
 [forgejo]
 url = "https://git.app.home.southroute.com"
-token = ""
+token = "1e9938c53e6c576b40ed3dd2db8f8aad83445074"
 token_op_ref = ""
-default_owner = ""
+default_owner = "southroute"
 
 [onepassword]
 vault = ""

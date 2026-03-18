@@ -20,11 +20,11 @@ from forge.services import repo as _repo_mod
 _SERVICE_MODULES = [
     _auth_mod,
     _completion_mod,
-    _repo_mod,
     _issue_mod,
+    _org_mod,
     _pr_mod,
     _release_mod,
-    _org_mod,
+    _repo_mod,
 ]
 
 
@@ -56,5 +56,5 @@ def mock_forgejo_client() -> MagicMock:  # type: ignore[misc]
     mock_client = MagicMock()
     original = client_mod._client
     client_mod._client = mock_client
-    yield mock_client
+    yield mock_client  # type: ignore[misc]
     client_mod._client = original

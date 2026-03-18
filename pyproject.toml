@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "forge"
-version = "0.4.0"
+version = "0.3.0"
 description = "forge — a click-clop project"
 readme = "README.md"
 requires-python = ">=3.14.0"
@@ -17,7 +17,6 @@ dependencies = [
 
     "fastmcp>=2.0.0",
 
-    "httpx>=0.27.0",
 
     "structlog>=24.0.0",
 
@@ -39,12 +38,17 @@ dev = [
 
     "ruff>=0.8.0",
     "mypy>=1.0",
+    "httpx>=0.27.0",
     "asciinema>=2.4.0",
 ]
 
 [project.scripts]
 forge = "forge.cli:main"
 
+
+[[tool.uv.index]]
+name = "forgejo"
+url = "https://git.app.home.southroute.com/api/packages/bayne/pypi/simple/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/forge"]
@@ -69,7 +73,6 @@ select = ["E", "F", "W", "I", "N", "UP"]
 [tool.mypy]
 python_version = "3.14"
 strict = true
-
-[[tool.mypy.overrides]]
-module = "click_clop.*"
 ignore_missing_imports = true
+warn_return_any = false
+disallow_subclassing_any = false

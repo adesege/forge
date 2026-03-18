@@ -115,11 +115,12 @@ build-deb: build ## Build Debian package from wheel
 
 FORGEJO_HOST ?= git.app.home.southroute.com
 PACKAGE_OWNER ?= bayne
-
-
-FORGEJO_TOKEN ?= dcaf3a0766e9b9ff42d7461e9d415045c61dc266
-
-
+# Token lookup order (last wins): ~/.config/click-clop/config.toml → project config.toml → config.local.toml.
+# Put your actual token in config.local.toml (gitignored) or ~/.config/click-clop/config.toml.
+# Override: make publish-pypi FORGEJO_TOKEN=<token>
+FORGEJO_TOKEN ?= $(shell python3 -c "import tomllib,subprocess,pathlib;c={};\
+[c.update(tomllib.load(open(f,'rb')).get('forgejo',{})) for f in [pathlib.Path.home()/'.config'/'click-clop'/'config.toml','config.toml','config.local.toml'] if pathlib.Path(f).exists()];\
+cmd=c.get('token_cmd','');print(subprocess.check_output(cmd,shell=True,text=True).strip() if cmd else c.get('token',''))" 2>/dev/null)
 
 .PHONY: publish-pypi
 publish-pypi: build ## Publish to Forgejo PyPI registry
@@ -185,6 +186,12 @@ release: ## Bump version, tag, and publish all artifacts (BUMP=patch|minor|major
 hooks: ## Install git hooks
 	git config core.hooksPath .git-hooks
 	@echo "Git hooks installed from .git-hooks/"
+
+# ── Worktrees ────────────────────────────────────────────────
+
+.PHONY: cleanup-worktrees
+cleanup-worktrees: ## Interactively clean up stale worktrees and branches
+	@scripts/cleanup-worktrees.sh
 
 # ── Cleanup ──────────────────────────────────────────────────
 

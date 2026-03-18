@@ -221,8 +221,8 @@ wheels = [
 
 [[package]]
 name = "click-clop"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.5.0"
+source = { registry = "https://git.app.home.southroute.com/api/packages/bayne/pypi/simple/" }
 dependencies = [
     { name = "click" },
     { name = "copier" },
@@ -236,9 +236,9 @@ dependencies = [
     { name = "structlog" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a0/b5/8f9fe528653bf75efcfeb94ac963b90c53bd2bf7a60408a5454ae70387f4/click_clop-0.3.0.tar.gz", hash = "sha256:d933d04f8f343fe67fc354fa95f1bdfbbf6986654e6dd6e47c6b79f45816913c", size = 92446, upload-time = "2026-03-05T22:38:47.183Z" }
+sdist = { url = "https://git.app.home.southroute.com/api/packages/bayne/pypi/files/click-clop/0.5.0/click_clop-0.5.0.tar.gz", hash = "sha256:8e37ca37cd58352ed6a111a1862db7abefe635811489e836d3b35739482d1ae0" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/b4/f1f5b95299013de9c8dd7df418fd3d4d6540973b82b20c912035a96ffb6d/click_clop-0.3.0-py3-none-any.whl", hash = "sha256:b6573a30db974f1afdde3b30ae2dd4d8c8cbf56a4fcbdb9295a4242d7d854e74", size = 39104, upload-time = "2026-03-05T22:38:45.668Z" },
+    { url = "https://git.app.home.southroute.com/api/packages/bayne/pypi/files/click-clop/0.5.0/click_clop-0.5.0-py3-none-any.whl", hash = "sha256:8cf0aa35e4aedabc6920fb0983735128b9b5f0195014284526e7feb22d50471a" },
 ]
 
 [[package]]
@@ -510,13 +510,12 @@ wheels = [
 
 [[package]]
 name = "forge"
-version = "0.3.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "click-clop" },
     { name = "fastmcp" },
-    { name = "httpx" },
     { name = "rich" },
     { name = "structlog" },
 ]
@@ -525,6 +524,7 @@ dependencies = [
 dev = [
     { name = "asciinema" },
     { name = "behave" },
+    { name = "httpx" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-bdd" },
@@ -540,7 +540,6 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.0" },
     { name = "click-clop", specifier = ">=0.1.0" },
     { name = "fastmcp", specifier = ">=2.0.0" },
-    { name = "httpx", specifier = ">=0.27.0" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "structlog", specifier = ">=24.0.0" },
 ]
@@ -549,6 +548,7 @@ requires-dist = [
 dev = [
     { name = "asciinema", specifier = ">=2.4.0" },
     { name = "behave", specifier = ">=1.2.6" },
+    { name = "httpx", specifier = ">=0.27.0" },
     { name = "mypy", specifier = ">=1.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-bdd", specifier = ">=7.0" },

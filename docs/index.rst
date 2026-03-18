@@ -3,14 +3,6 @@ forge
 
 forge — a click-clop project
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   installation
-   usage
-   api
-
 Installation
 ============
 
@@ -28,23 +20,6 @@ CLI
 .. code-block:: bash
 
    forge --help
-   forge hello greet --name World
-
-Shell Completion
-~~~~~~~~~~~~~~~~
-
-Generate and install shell completions:
-
-.. code-block:: bash
-
-   # Bash (add to ~/.bashrc)
-   eval "$(forge completion bash)"
-
-   # Zsh (add to ~/.zshrc)
-   eval "$(forge completion zsh)"
-
-   # Fish
-   forge completion fish | source
 
 Server (REST + MCP)
 -------------------
@@ -57,7 +32,7 @@ Server (REST + MCP)
 API Reference
 =============
 
-.. automodule:: forge.services.hello
+.. automodule:: forge.services
    :members:
    :undoc-members:
 
