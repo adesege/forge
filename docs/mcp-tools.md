@@ -106,6 +106,17 @@ Delete a repository.
 
 **Returns:** Confirmation message
 
+### `repo_clone`
+Clone a repository. Shows an interactive selector if name is omitted.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | `""` | Repository name. Empty = show interactive selector |
+| `owner` | str | `""` | Repository owner. Empty = infer from config |
+| `directory` | str | `""` | Target directory for clone |
+
+**Returns:** Clone confirmation or interactive repo list (non-TTY fallback)
+
 ### `repo_search`
 Search repositories.
 
@@ -417,6 +428,144 @@ List members of an organization.
 | `page` | int | `1` | Page number |
 
 **Returns:** Table of members (username, name, email)
+
+---
+
+## Package Tools
+
+### `package_list`
+List packages for an owner.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `owner` | str | `""` | Package owner (user or org). Inferred from config if omitted |
+| `type` | str | `""` | Filter by package type (e.g. `generic`, `pypi`, `npm`, `debian`) |
+| `query` | str | `""` | Search query string |
+| `limit` | int | `30` | Max results |
+| `page` | int | `1` | Page number |
+
+**Returns:** Table of packages (name, type, version, creator, created date)
+
+### `package_view`
+View package version details.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | `""` | **Required.** Package name |
+| `version` | str | `""` | **Required.** Package version |
+| `type` | str | `""` | **Required.** Package type (e.g. `generic`, `pypi`, `npm`, `debian`) |
+| `owner` | str | `""` | Package owner. Inferred from config if omitted |
+
+**Returns:** Formatted package details
+
+### `package_files`
+List files in a package version.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | `""` | **Required.** Package name |
+| `version` | str | `""` | **Required.** Package version |
+| `type` | str | `""` | **Required.** Package type |
+| `owner` | str | `""` | Package owner. Inferred from config if omitted |
+
+**Returns:** Table of files (filename, size, MD5)
+
+### `package_delete`
+Delete a package version.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | `""` | **Required.** Package name |
+| `version` | str | `""` | **Required.** Package version |
+| `type` | str | `""` | **Required.** Package type |
+| `owner` | str | `""` | Package owner. Inferred from config if omitted |
+
+**Returns:** Confirmation message
+
+### `package_publish`
+Publish a file to the generic package registry.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | `""` | **Required.** Package name |
+| `version` | str | `""` | **Required.** Package version |
+| `file` | str | `""` | **Required.** Path to the file to upload |
+| `owner` | str | `""` | Package owner. Inferred from config if omitted |
+
+**Returns:** Confirmation with filename and version
+
+### `package_publish_deb`
+Publish a .deb package to the Forgejo Debian registry.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `file` | str | `""` | **Required.** Path to the .deb file to upload |
+| `owner` | str | `""` | Package owner. Inferred from config if omitted |
+| `distribution` | str | `"trixie"` | Debian distribution (e.g. `trixie`, `bookworm`, `noble`) |
+| `component` | str | `"main"` | Repository component (e.g. `main`, `contrib`, `non-free`) |
+
+**Returns:** Confirmation with filename, distribution, and component
+
+### `package_download`
+Download a file from the generic package registry.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | `""` | **Required.** Package name |
+| `version` | str | `""` | **Required.** Package version |
+| `filename` | str | `""` | **Required.** Name of the file to download |
+| `output` | str | `""` | Output path. Defaults to filename in current directory |
+| `owner` | str | `""` | Package owner. Inferred from config if omitted |
+
+**Returns:** Confirmation with download path
+
+---
+
+## Install Tools
+
+### `install_pypi`
+Add the Forgejo PyPI index to uv's global configuration (`~/.config/uv/uv.toml`).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `owner` | str | `""` | Package registry owner. From config if omitted |
+
+**Returns:** Confirmation with added URL, or "Already configured" if present
+
+### `install_debian`
+Add the Forgejo Debian package repository. Only works on Debian-based systems. Sets up `/etc/apt/sources.list.d/forgejo.list` and `/etc/apt/auth.conf.d/forgejo.conf`, then runs `apt-get update`.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `owner` | str | `""` | Package registry owner. From config if omitted |
+| `codename` | str | `""` | Debian codename. Auto-detected from `/etc/os-release` if omitted |
+
+**Returns:** Confirmation with sources.list entry
+
+---
+
+## Completion Tools
+
+### `completion_bash`
+Generate bash completion script.
+
+**Parameters:** none
+
+**Returns:** Bash completion script. Usage: `eval "$(forge completion bash)"`
+
+### `completion_zsh`
+Generate zsh completion script.
+
+**Parameters:** none
+
+**Returns:** Zsh completion script. Usage: `eval "$(forge completion zsh)"`
+
+### `completion_fish`
+Generate fish completion script.
+
+**Parameters:** none
+
+**Returns:** Fish completion script. Usage: `forge completion fish | source`
 
 ---
 

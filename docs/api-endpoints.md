@@ -83,6 +83,22 @@ This document maps each forge CLI command / MCP tool to the underlying Forgejo A
 
 ---
 
+## Packages
+
+| Command | Method | Endpoint | Swagger `operationId` | Description |
+|---------|--------|----------|----------------------|-------------|
+| `package list` | GET | `/packages/{owner}` | `listPackages` | List packages with optional type/query filtering |
+| `package view` | GET | `/packages/{owner}/{type}/{name}/{version}` | `getPackage` | View package version details |
+| `package files` | GET | `/packages/{owner}/{type}/{name}/{version}/files` | — | List files in a package version |
+| `package delete` | DELETE | `/packages/{owner}/{type}/{name}/{version}` | `deletePackage` | Delete a package version |
+| `package publish` | PUT | `/packages/{owner}/generic/{name}/{version}/{filename}` | — | Upload a file to the generic package registry (non-API path) |
+| `package publish-deb` | PUT | `/packages/{owner}/debian/pool/{distribution}/{component}/upload` | — | Upload a .deb to the Debian package registry (non-API path) |
+| `package download` | GET | `/packages/{owner}/generic/{name}/{version}/{filename}` | — | Download a file from the generic package registry (non-API path) |
+
+**Note:** The `publish`, `publish-deb`, and `download` commands use Forgejo's package registry upload/download URLs which are outside the `/api/v1` namespace. The `list`, `view`, `files`, and `delete` commands use the standard API.
+
+---
+
 ## Endpoints Not Yet Covered
 
 The Forgejo API v1 exposes ~304 endpoints. The following categories are available in the API but not yet wrapped by forge:
@@ -103,4 +119,3 @@ The Forgejo API v1 exposes ~304 endpoints. The following categories are availabl
 | **Stars/Watch** | `/user/starred`, `/repos/{owner}/{repo}/subscription` | Social features |
 | **GPG/SSH keys** | `/user/gpg_keys`, `/user/keys` | Key management |
 | **ActivityPub** | `/activitypub/*` | Federation endpoints |
-| **Packages** | `/packages/{owner}` | Package registry |
