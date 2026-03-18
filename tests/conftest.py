@@ -13,6 +13,7 @@ from forge.services import auth as _auth_mod
 from forge.services import completion as _completion_mod
 from forge.services import issue as _issue_mod
 from forge.services import org as _org_mod
+from forge.services import package as _package_mod
 from forge.services import pr as _pr_mod
 from forge.services import release as _release_mod
 from forge.services import repo as _repo_mod
@@ -22,6 +23,7 @@ _SERVICE_MODULES = [
     _completion_mod,
     _issue_mod,
     _org_mod,
+    _package_mod,
     _pr_mod,
     _release_mod,
     _repo_mod,

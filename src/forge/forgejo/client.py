@@ -18,7 +18,9 @@ class ForgejoClient:
     """Synchronous HTTP client for the Forgejo API v1."""
 
     def __init__(self, base_url: str, token: str) -> None:
-        api_base = base_url.rstrip("/") + "/api/v1"
+        self._base_url = base_url.rstrip("/")
+        api_base = self._base_url + "/api/v1"
+        self._token = token
         self._client = httpx.Client(
             base_url=api_base,
             headers={
@@ -108,6 +110,44 @@ class ForgejoClient:
             params["page"] += 1
 
         return results[:limit]
+
+    def put_file(
+        self,
+        path: str,
+        content: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> Any:
+        """Upload a file via PUT to a non-v1 API path (e.g. package registry).
+
+        The path should start with /api/packages/... (not /api/v1/).
+        """
+        url = self._base_url + path
+        resp = self._client.put(
+            url,
+            content=content,
+            headers={
+                "Content-Type": content_type,
+                "Authorization": f"token {self._token}",
+            },
+        )
+        return self._handle_response(resp)
+
+    def download_file(self, path: str) -> bytes:
+        """Download binary content from a non-v1 API path.
+
+        The path should start with /api/packages/... (not /api/v1/).
+        """
+        url = self._base_url + path
+        resp = self._client.get(
+            url,
+            headers={
+                "Accept": "application/octet-stream",
+                "Authorization": f"token {self._token}",
+            },
+        )
+        if resp.status_code >= 400:
+            self._handle_response(resp)
+        return resp.content
 
     def close(self) -> None:
         """Close the underlying HTTP client."""

@@ -152,6 +152,26 @@ def format_json(data: Any) -> str:
     return json.dumps(data, indent=2, default=str)
 
 
+def format_package(pkg: dict[str, Any]) -> str:
+    """Format a single package for detailed view."""
+    lines = Text()
+    lines.append(pkg.get("name", ""), style="bold cyan")
+    lines.append(f"  [{pkg.get('type', '')}]", style="yellow")
+    lines.append("\n")
+    lines.append(f"\nVersion:     {pkg.get('version', 'N/A')}\n")
+    creator = pkg.get("creator", {})
+    if creator:
+        lines.append(f"Creator:     {creator.get('login', 'unknown')}\n")
+    lines.append(f"Created:     {pkg.get('created_at', '')}\n")
+    repo = pkg.get("repository")
+    if repo:
+        lines.append(f"Repository:  {repo.get('full_name', '')}\n")
+    html_url = pkg.get("html_url", "")
+    if html_url:
+        lines.append(f"URL:         {html_url}\n")
+    return _render(lines)
+
+
 def format_org(org: dict[str, Any]) -> str:
     """Format a single organization for detailed view."""
     lines = Text()

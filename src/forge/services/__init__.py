@@ -10,6 +10,7 @@ from forge.services import (
     install,  # noqa: F401
     issue,  # noqa: F401
     org,  # noqa: F401
+    package,  # noqa: F401
     pr,  # noqa: F401
     release,  # noqa: F401
     repo,  # noqa: F401
