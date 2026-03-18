@@ -141,8 +141,18 @@ class InstallService(Service):
 
         forgejo_url = _get_forgejo_url()
         repo_url = f"{forgejo_url}/api/packages/{owner}/debian"
+
+        # Detect system architecture to avoid 404s for unsupported architectures
+        try:
+            arch = subprocess.run(
+                ["dpkg", "--print-architecture"],
+                capture_output=True, text=True, check=True,
+            ).stdout.strip()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            arch = "amd64"
+
         # [trusted=yes] because Forgejo package registries are not GPG-signed
-        sources_line = f"deb [trusted=yes] {repo_url} {codename} main"
+        sources_line = f"deb [arch={arch} trusted=yes] {repo_url} {codename} main"
         sources_file = Path("/etc/apt/sources.list.d/forgejo.list")
         auth_file = Path("/etc/apt/auth.conf.d/forgejo.conf")
 
