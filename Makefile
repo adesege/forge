@@ -104,7 +104,7 @@ build-deb: build ## Build Debian package from wheel
 	printf 'Package: $(DEB_NAME)\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: all\nDepends: uv\nMaintainer: Brian Payne\nDescription: forge — a click-clop project\n' \
 		> $(DEB_PKG_DIR)/DEBIAN/control
 	cp dist/*.whl $(DEB_PKG_DIR)/opt/$(DEB_NAME)/
-	printf '#!/bin/sh\nset -e\nuv venv --python 3.14.0 /opt/$(DEB_NAME)/venv\nuv pip install --python /opt/$(DEB_NAME)/venv/bin/python --force-reinstall /opt/$(DEB_NAME)/*.whl\nln -sf /opt/$(DEB_NAME)/venv/bin/$(DEB_NAME) /usr/bin/$(DEB_NAME)\n' \
+	printf '#!/bin/sh\nset -e\nuv venv --python 3.14.0 /opt/$(DEB_NAME)/venv\nchmod -R a+rX /opt/$(DEB_NAME)/venv\nuv pip install --python /opt/$(DEB_NAME)/venv/bin/python --force-reinstall /opt/$(DEB_NAME)/*.whl\nchmod -R a+rX /opt/$(DEB_NAME)/venv\nln -sf /opt/$(DEB_NAME)/venv/bin/$(DEB_NAME) /usr/bin/$(DEB_NAME)\n' \
 		> $(DEB_PKG_DIR)/DEBIAN/postinst
 	chmod 755 $(DEB_PKG_DIR)/DEBIAN/postinst
 	printf '#!/bin/sh\nset -e\nrm -f /usr/bin/$(DEB_NAME)\nrm -rf /opt/$(DEB_NAME)/venv\n' \
