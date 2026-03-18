@@ -1,0 +1,3 @@
+#!/bin/sh
+# Post-merge hook: prompt for version bump on release branch
+exec "$(git rev-parse --show-toplevel)/scripts/post-merge-version-bump.sh"
