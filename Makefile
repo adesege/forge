@@ -101,10 +101,10 @@ build-deb: build ## Build Debian package from wheel
 	mkdir -p $(DEB_PKG_DIR)/DEBIAN
 	mkdir -p $(DEB_PKG_DIR)/opt/$(DEB_NAME)
 	mkdir -p $(DEB_PKG_DIR)/usr/bin
-	printf 'Package: $(DEB_NAME)\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: all\nDepends: python3 (>= 3.14.0)\nMaintainer: Brian Payne\nDescription: forge — a click-clop project\n' \
+	printf 'Package: $(DEB_NAME)\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: all\nDepends: uv\nMaintainer: Brian Payne\nDescription: forge — a click-clop project\n' \
 		> $(DEB_PKG_DIR)/DEBIAN/control
 	cp dist/*.whl $(DEB_PKG_DIR)/opt/$(DEB_NAME)/
-	printf '#!/bin/sh\npip3 install --force-reinstall /opt/$(DEB_NAME)/*.whl\n' \
+	printf '#!/bin/sh\nuv pip install --system --force-reinstall /opt/$(DEB_NAME)/*.whl\n' \
 		> $(DEB_PKG_DIR)/DEBIAN/postinst
 	chmod 755 $(DEB_PKG_DIR)/DEBIAN/postinst
 	dpkg-deb --build $(DEB_PKG_DIR) dist/$(DEB_NAME)_$(VERSION)_all.deb
