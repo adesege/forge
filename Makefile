@@ -117,7 +117,7 @@ build-deb: build ## Build Debian package from wheel
 # ── Publishing ──────────────────────────────────────────────
 
 FORGEJO_HOST ?= git.app.home.southroute.com
-PACKAGE_OWNER ?= bayne
+PACKAGE_OWNER ?= southroute
 # Token lookup order (last wins): ~/.config/click-clop/config.toml → project config.toml → config.local.toml.
 # Put your actual token in config.local.toml (gitignored) or ~/.config/click-clop/config.toml.
 # Override: make publish-pypi FORGEJO_TOKEN=<token>
