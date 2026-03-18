@@ -118,8 +118,6 @@ build-deb: build ## Build Debian package from wheel
 
 FORGEJO_HOST ?= git.app.home.southroute.com
 PACKAGE_OWNER ?= bayne
-DEB_DISTRIBUTION ?= trixie
-DEB_COMPONENT ?= main
 # Token lookup order (last wins): ~/.config/click-clop/config.toml → project config.toml → config.local.toml.
 # Put your actual token in config.local.toml (gitignored) or ~/.config/click-clop/config.toml.
 # Override: make publish-pypi FORGEJO_TOKEN=<token>
@@ -143,7 +141,7 @@ publish-deb: build-deb ## Upload Debian package to Forgejo registry
 		-H "Authorization: token $(FORGEJO_TOKEN)" \
 		-H "Content-Type: application/octet-stream" \
 		--upload-file "$${DEB_FILE}" \
-		"https://$(FORGEJO_HOST)/api/packages/$(PACKAGE_OWNER)/debian/pool/$(DEB_DISTRIBUTION)/$(DEB_COMPONENT)/upload"
+		"https://$(FORGEJO_HOST)/api/packages/$(PACKAGE_OWNER)/debian/pool/trixie/main/upload"
 
 
 .PHONY: publish-all
@@ -190,6 +188,7 @@ release: ## Bump version, tag, and publish all artifacts (BUMP=patch|minor|major
 .PHONY: hooks
 hooks: ## Install git hooks
 	git config core.hooksPath .git-hooks
+	@chmod +x .git-hooks/* scripts/*.sh 2>/dev/null || true
 	@echo "Git hooks installed from .git-hooks/"
 
 # ── Worktrees ────────────────────────────────────────────────
