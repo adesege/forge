@@ -152,7 +152,7 @@ class TestGetClient:
                 "os.environ",
                 {"FORGE_FORGEJO__URL": "https://git.test.com", "FORGE_FORGEJO__TOKEN": "tok123"},
             ),
-            patch("forge.config.load_config", return_value={}),
+            patch("forge.config.get_config", return_value={}),
         ):
             client = get_client()
             assert isinstance(client, ForgejoClient)
@@ -160,7 +160,7 @@ class TestGetClient:
     def test_get_client_missing_url_raises(self) -> None:
         with (
             patch.dict("os.environ", {}, clear=True),
-            patch("forge.config.load_config", return_value={}),
+            patch("forge.config.get_config", return_value={}),
         ):
             with pytest.raises(RuntimeError, match="URL not configured"):
                 get_client()
@@ -170,7 +170,7 @@ class TestGetClient:
             patch.dict(
                 "os.environ", {"FORGE_FORGEJO__URL": "https://git.test.com"}, clear=True
             ),
-            patch("forge.config.load_config", return_value={"forgejo": {"url": ""}}),
+            patch("forge.config.get_config", return_value={"forgejo": {"url": ""}}),
         ):
             with pytest.raises(RuntimeError, match="token not configured"):
                 get_client()
@@ -181,7 +181,7 @@ class TestGetClient:
                 "os.environ",
                 {"FORGE_FORGEJO__URL": "https://git.test.com", "FORGE_FORGEJO__TOKEN": "tok"},
             ),
-            patch("forge.config.load_config", return_value={}),
+            patch("forge.config.get_config", return_value={}),
         ):
             c1 = get_client()
             c2 = get_client()

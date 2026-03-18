@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import click
 from click_clop import expose_cli
-from click_clop.config import load_config
 from click_clop.logging import setup_logging
 
 import forge.services  # noqa: F401 — triggers auto-registration
+from forge.config import get_config
 
 
 @click.group()
@@ -18,7 +18,7 @@ import forge.services  # noqa: F401 — triggers auto-registration
 def main(ctx: click.Context, config_path: str | None, log_level: str) -> None:
     """forge — a click-clop project"""
     ctx.ensure_object(dict)
-    ctx.obj["config"] = load_config(config_path, env_prefix="FORGE_")
+    ctx.obj["config"] = get_config(config_path)
     setup_logging(level=log_level, json_output=False, service_name="forge")
 
 

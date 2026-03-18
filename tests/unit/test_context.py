@@ -98,7 +98,7 @@ class TestGetForgejoHost:
 
             os.environ.pop("FORGE_FORGEJO__URL", None)
             with patch(
-                "forge.config.load_config",
+                "forge.config.get_config",
                 return_value={"forgejo": {"url": "https://forgejo.local"}},
             ):
                 assert _get_forgejo_host() == "forgejo.local"
@@ -108,7 +108,7 @@ class TestGetForgejoHost:
             "os.environ", {"FORGE_FORGEJO__URL": "https://env.example.com"}
         ):
             with patch(
-                "forge.config.load_config",
+                "forge.config.get_config",
                 return_value={"forgejo": {"url": "https://config.example.com"}},
             ):
                 assert _get_forgejo_host() == "env.example.com"
@@ -119,7 +119,7 @@ class TestGetForgejoHost:
 
             os.environ.pop("FORGE_FORGEJO__URL", None)
             with patch(
-                "forge.config.load_config",
+                "forge.config.get_config",
                 return_value={"forgejo": {}},
             ):
                 assert _get_forgejo_host() == ""
@@ -459,7 +459,7 @@ class TestGetDefaultOwner:
             import os
             os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
             with patch(
-                "forge.config.load_config",
+                "forge.config.get_config",
                 return_value={"forgejo": {"default_owner": "config-org"}},
             ):
                 assert get_default_owner() == "config-org"
@@ -469,7 +469,7 @@ class TestGetDefaultOwner:
             import os
             os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
             with patch(
-                "forge.config.load_config",
+                "forge.config.get_config",
                 return_value={"forgejo": {}},
             ):
                 assert get_default_owner() == ""
@@ -477,7 +477,7 @@ class TestGetDefaultOwner:
     def test_env_takes_precedence(self) -> None:
         with patch.dict("os.environ", {"FORGE_FORGEJO__DEFAULT_OWNER": "env-org"}):
             with patch(
-                "forge.config.load_config",
+                "forge.config.get_config",
                 return_value={"forgejo": {"default_owner": "config-org"}},
             ):
                 assert get_default_owner() == "env-org"
