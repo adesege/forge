@@ -6,7 +6,7 @@ on:
 
 env:
   FORGEJO_HOST: git.app.home.southroute.com
-  PACKAGE_OWNER: bayne
+  PACKAGE_OWNER: southroute
 
 jobs:
   publish-pypi:

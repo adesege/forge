@@ -60,12 +60,12 @@ git push origin v0.1.0
 
 ```bash
 # Python package
-pip install forge --index-url https://git.app.home.southroute.com/api/packages/bayne/pypi/simple/
+pip install forge --index-url https://git.app.home.southroute.com/api/packages/southroute/pypi/simple/
 
 
 
 # Debian package (add repo first)
-echo "deb https://git.app.home.southroute.com/api/packages/bayne/debian trixie main" | sudo tee /etc/apt/sources.list.d/forgejo.list
+echo "deb https://git.app.home.southroute.com/api/packages/southroute/debian trixie main" | sudo tee /etc/apt/sources.list.d/forgejo.list
 sudo apt-get update && sudo apt-get install forge
 
 ```

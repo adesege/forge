@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "forge"
-version = "0.23.0"
+version = "1.0.0"
 description = "forge — a click-clop project"
 readme = "README.md"
 requires-python = ">=3.14.0"
@@ -48,7 +48,7 @@ forge = "forge.cli:main"
 
 [[tool.uv.index]]
 name = "forgejo"
-url = "https://git.app.home.southroute.com/api/packages/bayne/pypi/simple/"
+url = "https://git.app.home.southroute.com/api/packages/southroute/pypi/simple/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/forge"]
