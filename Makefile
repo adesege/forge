@@ -2,6 +2,8 @@
 # Primary interface for development tasks.
 # Proxies to uv, pytest, podman, and helm.
 
+SHELL := /bin/bash
+
 -include .env
 export
 
@@ -104,10 +106,10 @@ build-deb: build ## Build Debian package from wheel
 	printf 'Package: $(DEB_NAME)\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: all\nDepends: uv\nMaintainer: Brian Payne\nDescription: forge — a click-clop project\n' \
 		> $(DEB_PKG_DIR)/DEBIAN/control
 	cp dist/*.whl $(DEB_PKG_DIR)/opt/$(DEB_NAME)/
-	printf '#!/bin/sh\nset -e\nuv venv --python 3.14.0 /opt/$(DEB_NAME)/venv\nchmod -R a+rX /opt/$(DEB_NAME)/venv\nuv pip install --python /opt/$(DEB_NAME)/venv/bin/python --force-reinstall /opt/$(DEB_NAME)/*.whl\nchmod -R a+rX /opt/$(DEB_NAME)/venv\nln -sf /opt/$(DEB_NAME)/venv/bin/$(DEB_NAME) /usr/bin/$(DEB_NAME)\n' \
+	printf '#!/bin/sh\nset -e\nexport UV_PYTHON_INSTALL_DIR=/opt/$(DEB_NAME)/python\nuv venv --clear --python 3.14.0 /opt/$(DEB_NAME)/venv\nuv pip install --python /opt/$(DEB_NAME)/venv/bin/python --force-reinstall /opt/$(DEB_NAME)/*.whl\nchmod -R a+rX /opt/$(DEB_NAME)/python /opt/$(DEB_NAME)/venv\nln -sf /opt/$(DEB_NAME)/venv/bin/$(DEB_NAME) /usr/bin/$(DEB_NAME)\n' \
 		> $(DEB_PKG_DIR)/DEBIAN/postinst
 	chmod 755 $(DEB_PKG_DIR)/DEBIAN/postinst
-	printf '#!/bin/sh\nset -e\nrm -f /usr/bin/$(DEB_NAME)\nrm -rf /opt/$(DEB_NAME)/venv\n' \
+	printf '#!/bin/sh\nset -e\nrm -f /usr/bin/$(DEB_NAME)\nrm -rf /opt/$(DEB_NAME)/venv /opt/$(DEB_NAME)/python\n' \
 		> $(DEB_PKG_DIR)/DEBIAN/prerm
 	chmod 755 $(DEB_PKG_DIR)/DEBIAN/prerm
 	dpkg-deb --build $(DEB_PKG_DIR) dist/$(DEB_NAME)_$(VERSION)_all.deb
@@ -179,7 +181,7 @@ release: ## Bump version, tag, and publish all artifacts (BUMP=patch|minor|major
 	git commit -m "release: v$$NEW"; \
 	git tag -a "v$$NEW" -m "Release v$$NEW"
 
-	$(MAKE) publish-all
+	$(MAKE) VERSION=$$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/') publish-all
 
 	git push origin $(RELEASE_BRANCH) --tags
 

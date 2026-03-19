@@ -221,8 +221,8 @@ wheels = [
 
 [[package]]
 name = "click-clop"
-version = "0.5.0"
-source = { registry = "https://git.app.home.southroute.com/api/packages/bayne/pypi/simple/" }
+version = "0.10.0"
+source = { registry = "https://git.app.home.southroute.com/api/packages/southroute/pypi/simple/" }
 dependencies = [
     { name = "click" },
     { name = "copier" },
@@ -236,9 +236,9 @@ dependencies = [
     { name = "structlog" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://git.app.home.southroute.com/api/packages/bayne/pypi/files/click-clop/0.5.0/click_clop-0.5.0.tar.gz", hash = "sha256:8e37ca37cd58352ed6a111a1862db7abefe635811489e836d3b35739482d1ae0" }
+sdist = { url = "https://git.app.home.southroute.com/api/packages/southroute/pypi/files/click-clop/0.10.0/click_clop-0.10.0.tar.gz", hash = "sha256:0d0fb3dd9b79e56f2fd3122b28d296700bdbc8899bbe224c1a9a03af675cbcfc" }
 wheels = [
-    { url = "https://git.app.home.southroute.com/api/packages/bayne/pypi/files/click-clop/0.5.0/click_clop-0.5.0-py3-none-any.whl", hash = "sha256:8cf0aa35e4aedabc6920fb0983735128b9b5f0195014284526e7feb22d50471a" },
+    { url = "https://git.app.home.southroute.com/api/packages/southroute/pypi/files/click-clop/0.10.0/click_clop-0.10.0-py3-none-any.whl", hash = "sha256:9fedebde03626b9b233f4c4444ff25cde19cb5d2bdf6b1e754440e84f3924dcb" },
 ]
 
 [[package]]
