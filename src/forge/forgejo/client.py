@@ -173,9 +173,9 @@ def get_client() -> ForgejoClient:
 
     import os
 
-    from forge.config import get_config
+    from forge.config import load_config
 
-    config = get_config()
+    config = load_config()
     forgejo_cfg = config.get("forgejo", {})
 
     url = os.environ.get("FORGE_FORGEJO__URL", forgejo_cfg.get("url", ""))

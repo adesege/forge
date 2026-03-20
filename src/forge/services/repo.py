@@ -160,7 +160,6 @@ class RepoService(Service):
                 check=True,
             )
 
-
     def clone(self, name: str = "", owner: str = "", directory: str = "") -> str:
         """Clone a repository. Shows an interactive selector if name is omitted."""
         if not owner:

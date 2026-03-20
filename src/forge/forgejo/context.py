@@ -22,9 +22,9 @@ def _get_forgejo_host() -> str:
     """
     url = os.environ.get("FORGE_FORGEJO__URL", "")
     if not url:
-        from forge.config import get_config
+        from forge.config import load_config
 
-        config = get_config()
+        config = load_config()
         url = config.get("forgejo", {}).get("url", "")
     if not url:
         return ""
@@ -158,16 +158,13 @@ def select_forge_remote() -> str:
     all_remotes = _list_remotes()
     if not all_remotes:
         raise RuntimeError(
-            "No git remotes configured. Add a remote first with:\n"
-            "  git remote add origin <url>"
+            "No git remotes configured. Add a remote first with:\n  git remote add origin <url>"
         )
 
     remotes = _filter_forgejo_remotes(all_remotes)
     forgejo_host = _get_forgejo_host()
     if not remotes:
-        non_forgejo_urls = [
-            f"  {name} -> {_get_remote_url(name)}" for name in all_remotes
-        ]
+        non_forgejo_urls = [f"  {name} -> {_get_remote_url(name)}" for name in all_remotes]
         raise RuntimeError(
             f"No remotes point to the Forgejo instance ({forgejo_host}).\n"
             "Configured remotes:\n"
@@ -257,9 +254,7 @@ def get_repo_context() -> tuple[str, str]:
         check=False,
     )
     if result.returncode != 0:
-        raise RuntimeError(
-            f"Not in a git repository or remote '{remote}' not configured"
-        )
+        raise RuntimeError(f"Not in a git repository or remote '{remote}' not configured")
 
     url = result.stdout.strip()
     return parse_remote_url(url)
@@ -295,7 +290,7 @@ def get_default_owner() -> str:
     if env_val:
         return env_val
 
-    from forge.config import get_config
+    from forge.config import load_config
 
-    config = get_config()
+    config = load_config()
     return config.get("forgejo", {}).get("default_owner", "")

@@ -10,12 +10,12 @@ from urllib.parse import urlparse
 
 from click_clop.service import Service
 
-from forge.config import get_config
+from forge.config import load_config
 
 
 def _get_forgejo_config() -> dict[str, str]:
     """Get the forgejo config section."""
-    config = get_config()
+    config = load_config()
     return config.get("forgejo", {})
 
 
@@ -147,9 +147,11 @@ class InstallService(Service):
         try:
             arch = subprocess.run(
                 ["dpkg", "--print-architecture"],
-                capture_output=True, text=True, check=True,
+                capture_output=True,
+                text=True,
+                check=True,
             ).stdout.strip()
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        except subprocess.CalledProcessError, FileNotFoundError:
             arch = "amd64"
 
         # [trusted=yes] because Forgejo package registries are not GPG-signed
@@ -159,11 +161,7 @@ class InstallService(Service):
 
         # Set up apt authentication via auth.conf.d (keeps token out of sources.list)
         host = urlparse(forgejo_url).hostname or ""
-        auth_content = (
-            f"machine {host}\n"
-            f"login _token\n"
-            f"password {token}\n"
-        )
+        auth_content = f"machine {host}\nlogin _token\npassword {token}\n"
 
         if sources_file.exists():
             existing = sources_file.read_text()
@@ -201,8 +199,17 @@ class InstallService(Service):
 
         try:
             subprocess.run(
-                ["sudo", "apt-get", "update", "-o", f"Dir::Etc::sourcelist={sources_file}",
-                 "-o", "Dir::Etc::sourceparts=-", "-o", "APT::Get::List-Cleanup=0"],
+                [
+                    "sudo",
+                    "apt-get",
+                    "update",
+                    "-o",
+                    f"Dir::Etc::sourcelist={sources_file}",
+                    "-o",
+                    "Dir::Etc::sourceparts=-",
+                    "-o",
+                    "APT::Get::List-Cleanup=0",
+                ],
                 capture_output=True,
                 text=True,
                 check=True,

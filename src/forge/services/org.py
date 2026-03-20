@@ -43,9 +43,7 @@ class OrgService(Service):
         if not org:
             return "Error: --org is required."
         client = get_client()
-        data = client.get(
-            f"/orgs/{org}/repos", params={"limit": limit, "page": page}
-        )
+        data = client.get(f"/orgs/{org}/repos", params={"limit": limit, "page": page})
         if not data:
             return "No repositories found."
         return format_table(
@@ -64,9 +62,7 @@ class OrgService(Service):
         if not org:
             return "Error: --org is required."
         client = get_client()
-        data = client.get(
-            f"/orgs/{org}/members", params={"limit": limit, "page": page}
-        )
+        data = client.get(f"/orgs/{org}/members", params={"limit": limit, "page": page})
         if not data:
             return "No members found."
         return format_table(

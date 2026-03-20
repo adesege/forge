@@ -116,9 +116,7 @@ class IssueService(Service):
         client.patch(f"/repos/{owner}/{repo}/issues/{number}", json={"state": "open"})
         return f"Reopened issue #{number}"
 
-    def comment(
-        self, number: int = 0, body: str = "", owner: str = "", repo: str = ""
-    ) -> str:
+    def comment(self, number: int = 0, body: str = "", owner: str = "", repo: str = "") -> str:
         """Add a comment to an issue."""
         if not owner or not repo:
             owner, repo = get_repo_context()
@@ -158,9 +156,7 @@ class IssueService(Service):
         return f"Updated issue #{data['number']}: {data['title']}"
 
     @staticmethod
-    def _resolve_labels(
-        client: Any, owner: str, repo: str, labels_csv: str
-    ) -> list[int]:  # type: ignore[valid-type]
+    def _resolve_labels(client: Any, owner: str, repo: str, labels_csv: str) -> list[int]:  # type: ignore[valid-type]
         """Resolve comma-separated label names to IDs."""
         names = [n.strip() for n in labels_csv.split(",") if n.strip()]
         if not names:

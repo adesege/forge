@@ -17,9 +17,7 @@ class ReleaseService(Service):
     name = "release"
     description = "Manage releases"
 
-    def list(
-        self, owner: str = "", repo: str = "", limit: int = 30, page: int = 1
-    ) -> str:
+    def list(self, owner: str = "", repo: str = "", limit: int = 30, page: int = 1) -> str:
         """List releases."""
         if not owner or not repo:
             owner, repo = get_repo_context()
@@ -115,9 +113,7 @@ class ReleaseService(Service):
             payload["name"] = title
         if body:
             payload["body"] = body
-        data = client.patch(
-            f"/repos/{owner}/{repo}/releases/{release['id']}", json=payload
-        )
+        data = client.patch(f"/repos/{owner}/{repo}/releases/{release['id']}", json=payload)
         return f"Updated release: {data.get('name', tag)}"
 
 

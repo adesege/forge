@@ -24,9 +24,9 @@ class AuthService(Service):
         """Display the configured API token (masked)."""
         import os
 
-        from forge.config import get_config
+        from forge.config import load_config
 
-        config = get_config()
+        config = load_config()
         forgejo_cfg = config.get("forgejo", {})
 
         token = os.environ.get("FORGE_FORGEJO__TOKEN", forgejo_cfg.get("token", ""))

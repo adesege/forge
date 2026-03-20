@@ -3,37 +3,31 @@
 from __future__ import annotations
 
 from click.testing import CliRunner
-from click_clop.service import ServiceRegistry
 
 from forge.cli import main
+from forge.services.completion import CompletionService
 
 
 class TestCompletionService:
     """Test the CompletionService methods directly."""
 
     def test_bash_completion_script(self):
-        svc = ServiceRegistry.get().get_service("completion")
-        assert svc is not None
-        bash = next(m for m in svc.methods() if m.name == "bash")
-        result = bash.func()
+        svc = CompletionService(_auto_register=False)
+        result = svc.bash()
         assert "_forge_completion()" in result
         assert "_FORGE_COMPLETE=bash_complete" in result
         assert "complete " in result
 
     def test_zsh_completion_script(self):
-        svc = ServiceRegistry.get().get_service("completion")
-        assert svc is not None
-        zsh = next(m for m in svc.methods() if m.name == "zsh")
-        result = zsh.func()
+        svc = CompletionService(_auto_register=False)
+        result = svc.zsh()
         assert "_forge_completion()" in result
         assert "_FORGE_COMPLETE=zsh_complete" in result
         assert "compdef" in result
 
     def test_fish_completion_script(self):
-        svc = ServiceRegistry.get().get_service("completion")
-        assert svc is not None
-        fish = next(m for m in svc.methods() if m.name == "fish")
-        result = fish.func()
+        svc = CompletionService(_auto_register=False)
+        result = svc.fish()
         assert "_forge_completion" in result
         assert "_FORGE_COMPLETE=fish_complete" in result
         assert "complete " in result

@@ -85,9 +85,7 @@ class TestRepoService:
                 patch.object(svc, "_add_remote") as mock_add,
             ):
                 result = svc.create(name="newrepo", description="new", private=True)
-                mock_resolve.assert_called_once_with(
-                    "https://git.example.com/user/newrepo.git"
-                )
+                mock_resolve.assert_called_once_with("https://git.example.com/user/newrepo.git")
                 mock_add.assert_called_once_with(
                     "origin", "https://git.example.com/user/newrepo.git"
                 )

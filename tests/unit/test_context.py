@@ -87,9 +87,7 @@ class TestGetForgejoHost:
     """Tests for _get_forgejo_host."""
 
     def test_from_env(self) -> None:
-        with patch.dict(
-            "os.environ", {"FORGE_FORGEJO__URL": "https://git.example.com"}
-        ):
+        with patch.dict("os.environ", {"FORGE_FORGEJO__URL": "https://git.example.com"}):
             assert _get_forgejo_host() == "git.example.com"
 
     def test_from_config(self) -> None:
@@ -98,17 +96,15 @@ class TestGetForgejoHost:
 
             os.environ.pop("FORGE_FORGEJO__URL", None)
             with patch(
-                "forge.config.get_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"url": "https://forgejo.local"}},
             ):
                 assert _get_forgejo_host() == "forgejo.local"
 
     def test_env_takes_precedence(self) -> None:
-        with patch.dict(
-            "os.environ", {"FORGE_FORGEJO__URL": "https://env.example.com"}
-        ):
+        with patch.dict("os.environ", {"FORGE_FORGEJO__URL": "https://env.example.com"}):
             with patch(
-                "forge.config.get_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"url": "https://config.example.com"}},
             ):
                 assert _get_forgejo_host() == "env.example.com"
@@ -119,7 +115,7 @@ class TestGetForgejoHost:
 
             os.environ.pop("FORGE_FORGEJO__URL", None)
             with patch(
-                "forge.config.get_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {}},
             ):
                 assert _get_forgejo_host() == ""
@@ -129,9 +125,7 @@ class TestFilterForgejoRemotes:
     """Tests for _filter_forgejo_remotes."""
 
     def test_filters_to_matching_remotes(self) -> None:
-        with patch(
-            "forge.forgejo.context._get_forgejo_host", return_value="git.example.com"
-        ):
+        with patch("forge.forgejo.context._get_forgejo_host", return_value="git.example.com"):
             with patch("forge.forgejo.context._get_remote_url") as mock_url:
                 mock_url.side_effect = lambda name: {
                     "origin": "git@github.com:user/repo.git",
@@ -146,18 +140,14 @@ class TestFilterForgejoRemotes:
             assert result == ["origin", "upstream"]
 
     def test_returns_empty_when_none_match(self) -> None:
-        with patch(
-            "forge.forgejo.context._get_forgejo_host", return_value="git.example.com"
-        ):
+        with patch("forge.forgejo.context._get_forgejo_host", return_value="git.example.com"):
             with patch("forge.forgejo.context._get_remote_url") as mock_url:
                 mock_url.return_value = "git@github.com:user/repo.git"
                 result = _filter_forgejo_remotes(["origin", "upstream"])
                 assert result == []
 
     def test_case_insensitive_host_match(self) -> None:
-        with patch(
-            "forge.forgejo.context._get_forgejo_host", return_value="Git.Example.COM"
-        ):
+        with patch("forge.forgejo.context._get_forgejo_host", return_value="Git.Example.COM"):
             with patch(
                 "forge.forgejo.context._get_remote_url",
                 return_value="git@git.example.com:user/repo.git",
@@ -166,9 +156,7 @@ class TestFilterForgejoRemotes:
                 assert result == ["origin"]
 
     def test_matches_https_remote(self) -> None:
-        with patch(
-            "forge.forgejo.context._get_forgejo_host", return_value="git.example.com"
-        ):
+        with patch("forge.forgejo.context._get_forgejo_host", return_value="git.example.com"):
             with patch(
                 "forge.forgejo.context._get_remote_url",
                 return_value="https://git.example.com/user/repo.git",
@@ -293,9 +281,7 @@ class TestSelectForgeRemote:
                 "origin": "git@github.com:u/r.git",
                 "upstream": "git@gitlab.com:u/r.git",
             }.get(name, "")
-            with pytest.raises(
-                RuntimeError, match="No remotes point to the Forgejo instance"
-            ):
+            with pytest.raises(RuntimeError, match="No remotes point to the Forgejo instance"):
                 select_forge_remote()
 
     def test_non_interactive_falls_back_to_origin(self) -> None:
@@ -399,15 +385,11 @@ class TestGetRepoContext:
     def test_selects_remote_on_first_use(self) -> None:
         with (
             patch("forge.forgejo.context.get_forge_remote", return_value=None),
-            patch(
-                "forge.forgejo.context.select_forge_remote", return_value="origin"
-            ),
+            patch("forge.forgejo.context.select_forge_remote", return_value="origin"),
             patch("forge.forgejo.context.subprocess") as mock_sp,
         ):
             mock_sp.run.return_value.returncode = 0
-            mock_sp.run.return_value.stdout = (
-                "git@git.example.com:owner/repo.git\n"
-            )
+            mock_sp.run.return_value.stdout = "git@git.example.com:owner/repo.git\n"
             assert get_repo_context() == ("owner", "repo")
 
     def test_remote_not_found_raises(self) -> None:
@@ -429,15 +411,11 @@ class TestGetRepoContext:
             patch("forge.forgejo.context._get_remote_url", return_value="git@github.com:u/r.git"),
             patch("forge.forgejo.context._get_forgejo_host", return_value="git.example.com"),
             patch("forge.forgejo.context.subprocess") as mock_sp,
-            patch(
-                "forge.forgejo.context.select_forge_remote", return_value="forge"
-            ),
+            patch("forge.forgejo.context.select_forge_remote", return_value="forge"),
             patch("forge.forgejo.context.Console"),
         ):
             mock_sp.run.return_value.returncode = 0
-            mock_sp.run.return_value.stdout = (
-                "git@git.example.com:owner/repo.git\n"
-            )
+            mock_sp.run.return_value.stdout = "git@git.example.com:owner/repo.git\n"
             assert get_repo_context() == ("owner", "repo")
             # Should have unset the old forge flag
             mock_sp.run.assert_any_call(
@@ -457,9 +435,10 @@ class TestGetDefaultOwner:
     def test_from_config(self) -> None:
         with patch.dict("os.environ", {}, clear=False):
             import os
+
             os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
             with patch(
-                "forge.config.get_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"default_owner": "config-org"}},
             ):
                 assert get_default_owner() == "config-org"
@@ -467,9 +446,10 @@ class TestGetDefaultOwner:
     def test_empty_when_not_set(self) -> None:
         with patch.dict("os.environ", {}, clear=False):
             import os
+
             os.environ.pop("FORGE_FORGEJO__DEFAULT_OWNER", None)
             with patch(
-                "forge.config.get_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {}},
             ):
                 assert get_default_owner() == ""
@@ -477,7 +457,7 @@ class TestGetDefaultOwner:
     def test_env_takes_precedence(self) -> None:
         with patch.dict("os.environ", {"FORGE_FORGEJO__DEFAULT_OWNER": "env-org"}):
             with patch(
-                "forge.config.get_config",
+                "forge.config.load_config",
                 return_value={"forgejo": {"default_owner": "config-org"}},
             ):
                 assert get_default_owner() == "env-org"
