@@ -100,19 +100,27 @@ DEB_PKG_DIR = dist/$(DEB_NAME)_$(VERSION)
 .PHONY: build-deb
 build-deb: build ## Build Debian package from wheel
 	rm -rf $(DEB_PKG_DIR)
-	mkdir -p $(DEB_PKG_DIR)/DEBIAN
-	mkdir -p $(DEB_PKG_DIR)/opt/$(DEB_NAME)
-	mkdir -p $(DEB_PKG_DIR)/usr/bin
-	printf 'Package: $(DEB_NAME)\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: all\nDepends: uv\nMaintainer: Brian Payne\nDescription: forge — a click-clop project\n' \
+	install -d -m 0755 $(DEB_PKG_DIR)/DEBIAN
+	install -d -m 0755 $(DEB_PKG_DIR)/opt/$(DEB_NAME)
+	install -d -m 0755 $(DEB_PKG_DIR)/usr/bin
+	install -d -m 0755 $(DEB_PKG_DIR)/usr/share/doc/$(DEB_NAME)
+	install -d -m 0755 $(DEB_PKG_DIR)/usr/share/lintian/overrides
+	install -d -m 0755 $(DEB_PKG_DIR)/usr/share/man/man1
+	sed 's/__VERSION__/$(VERSION)/g' debian/control \
 		> $(DEB_PKG_DIR)/DEBIAN/control
-	cp dist/*.whl $(DEB_PKG_DIR)/opt/$(DEB_NAME)/
-	printf '#!/bin/sh\nset -e\nexport UV_PYTHON_INSTALL_DIR=/opt/$(DEB_NAME)/python\nuv venv --clear --python 3.14.0 /opt/$(DEB_NAME)/venv\nuv pip install --python /opt/$(DEB_NAME)/venv/bin/python --force-reinstall /opt/$(DEB_NAME)/*.whl\nchmod -R a+rX /opt/$(DEB_NAME)/python /opt/$(DEB_NAME)/venv\nln -sf /opt/$(DEB_NAME)/venv/bin/$(DEB_NAME) /usr/bin/$(DEB_NAME)\n' \
-		> $(DEB_PKG_DIR)/DEBIAN/postinst
-	chmod 755 $(DEB_PKG_DIR)/DEBIAN/postinst
-	printf '#!/bin/sh\nset -e\nrm -f /usr/bin/$(DEB_NAME)\nrm -rf /opt/$(DEB_NAME)/venv /opt/$(DEB_NAME)/python\n' \
-		> $(DEB_PKG_DIR)/DEBIAN/prerm
-	chmod 755 $(DEB_PKG_DIR)/DEBIAN/prerm
-	dpkg-deb --build $(DEB_PKG_DIR) dist/$(DEB_NAME)_$(VERSION)_all.deb
+	sed -e 's/__VERSION__/$(VERSION)/g' -e 's/__YEAR__/$(shell date +%Y)/g' debian/copyright \
+		| install -m 0644 /dev/stdin $(DEB_PKG_DIR)/usr/share/doc/$(DEB_NAME)/copyright
+	sed -e 's/__VERSION__/$(VERSION)/g' -e 's/__DATE__/$(shell date -R)/g' debian/changelog \
+		| gzip -9n | install -m 0644 /dev/stdin $(DEB_PKG_DIR)/usr/share/doc/$(DEB_NAME)/changelog.gz
+	install -m 0644 debian/lintian-overrides $(DEB_PKG_DIR)/usr/share/lintian/overrides/$(DEB_NAME)
+	install -m 0644 dist/*.whl $(DEB_PKG_DIR)/opt/$(DEB_NAME)/
+	install -m 0755 debian/wrapper $(DEB_PKG_DIR)/usr/bin/$(DEB_NAME)
+	gzip -9n < debian/manpage | install -m 0644 /dev/stdin $(DEB_PKG_DIR)/usr/share/man/man1/$(DEB_NAME).1.gz
+	sed 's|__FORGEJO_HOST__|$(FORGEJO_HOST)|g;s|__PACKAGE_OWNER__|$(PACKAGE_OWNER)|g' debian/postinst \
+		| install -m 0755 /dev/stdin $(DEB_PKG_DIR)/DEBIAN/postinst
+	install -m 0755 debian/prerm $(DEB_PKG_DIR)/DEBIAN/prerm
+	dpkg-deb --root-owner-group --build $(DEB_PKG_DIR) dist/$(DEB_NAME)_$(VERSION)_all.deb
+	lintian dist/$(DEB_NAME)_$(VERSION)_all.deb
 
 
 
@@ -197,7 +205,7 @@ hooks: ## Install git hooks
 
 .PHONY: cleanup-worktrees
 cleanup-worktrees: ## Interactively clean up stale worktrees and branches
-	@scripts/cleanup-worktrees.sh
+	uv run git-good worktree cleanup
 
 # ── Cleanup ──────────────────────────────────────────────────
 

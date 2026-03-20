@@ -14,12 +14,13 @@ json_output = true
 enabled = true
 otlp_endpoint = "http://localhost:4317"
 
-[forgejo]
-url = "https://git.app.home.southroute.com"
-token = "1e9938c53e6c576b40ed3dd2db8f8aad83445074"
-token_op_ref = ""
-default_owner = "southroute"
-package_owner = "southroute"
-
 [onepassword]
 vault = ""
+
+
+[forgejo]
+# token = "your-token-here"
+# OR use a command for dynamic retrieval:
+# token_cmd = 'op read "op://Dev/Forgejo/token"'
+# Falls back to ~/.config/click-clop/config.toml [forgejo] section if not set here.
+

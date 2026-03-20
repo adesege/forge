@@ -1,0 +1,11 @@
+.TH FORGE 1 "2026" "forge" "User Commands"
+.SH NAME
+forge \- A click-clop CLI application
+.SH SYNOPSIS
+.B forge
+[\fIcommand\fR] [\fIoptions\fR]
+.SH DESCRIPTION
+.B forge
+A click-clop CLI application.
+.SH SEE ALSO
+Full documentation is available via \fBforge \-\-help\fR.

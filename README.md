@@ -1,6 +1,6 @@
 # forge
 
-forge — a click-clop project
+A click-clop CLI application
 
 Built with click-clop — every feature is simultaneously a CLI command and MCP tool.
 

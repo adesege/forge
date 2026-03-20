@@ -1,0 +1,10 @@
+Package: forge
+Version: __VERSION__
+Section: utils
+Priority: optional
+Architecture: all
+Depends: uv
+Maintainer: Brian Payne <bwpayne@gmail.com>
+Description: A click-clop CLI application
+ This package installs forge into /opt with an isolated
+ Python virtual environment managed by uv.

@@ -11,4 +11,8 @@ if [ -f "$BUMP_FILE" ]; then
     git tag -a "v${VERSION}" -m "Release v${VERSION}"
     rm -f "$BUMP_FILE"
     echo "==> Tagged: v${VERSION}"
+
+    REPO_ROOT="$(git rev-parse --show-toplevel)"
+    echo "==> Publishing artifacts..."
+    make -C "$REPO_ROOT" publish-all VERSION="$VERSION"
 fi

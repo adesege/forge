@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "forge"
-version = "1.2.0"
+version = "1.3.0"
 description = "forge — a click-clop project"
 readme = "README.md"
 requires-python = ">=3.14.0"
@@ -13,7 +13,7 @@ authors = [{name = "Brian Payne", email = "bwpayne@gmail.com"}]
 
 dependencies = [
     "click>=8.1.0",
-    "click-clop>=0.1.0",
+    "git-good>=4.7.0",
 
     "fastmcp>=2.0.0",
 

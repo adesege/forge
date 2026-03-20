@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+export UV_PYTHON_INSTALL_DIR=/opt/forge/python
+uv venv --clear --python 3.14.0 /opt/forge/venv
+uv pip install --python /opt/forge/venv/bin/python --extra-index-url https://__FORGEJO_HOST__/api/packages/__PACKAGE_OWNER__/pypi/simple/ --force-reinstall /opt/forge/*.whl
+find /opt/forge/python /opt/forge/venv -type d -exec chmod 755 {} +
+find /opt/forge/python /opt/forge/venv -type f -exec chmod a+r {} +

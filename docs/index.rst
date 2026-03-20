@@ -1,7 +1,7 @@
 forge
 =====
 
-forge — a click-clop project
+A click-clop CLI application
 
 Installation
 ============

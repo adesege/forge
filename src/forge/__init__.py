@@ -1,3 +1,3 @@
-"""forge — a click-clop project"""
+"""A click-clop CLI application"""
 
 __version__ = "0.1.0"

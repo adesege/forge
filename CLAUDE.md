@@ -2,9 +2,8 @@
 
 ## Project Overview
 
-forge — a click-clop project
+A click-clop CLI application
 
-Built with the **click-clop** framework.
 
 Every feature is simultaneously a CLI command (Click) and MCP tool (FastMCP) via the service-layer pattern.
 
@@ -19,10 +18,10 @@ MCP (FastMCP) ─┘──> Service Layer (plain functions) ──> Config / Sec
 
 ```
 
-- **Services** live in `src/forge/services/`. Each service is a class with public methods.
-- **CLI** is auto-generated from services in `cli.py` via `expose_cli()`.
+- **Services** live in `src/forge/services/`. Each module contains business logic as plain functions.
+- **CLI** commands are registered in `cli.py` as Click groups/commands wrapping service functions.
 
-- **MCP** are auto-generated in `server.py` via `expose_mcp()`.
+- **MCP** are wired in `server.py`.
 
 - **Config** is loaded from `config.toml` with env var overrides (`FORGE_*`).
 

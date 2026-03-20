@@ -16,7 +16,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build"]
 
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+html_static_path = []
 
 # Auto-doc settings
 autodoc_member_order = "bysource"

@@ -1,0 +1,5 @@
+forge (__VERSION__) unstable; urgency=low
+
+  * Release __VERSION__
+
+ -- Brian Payne <bwpayne@gmail.com>  __DATE__
