@@ -26,7 +26,7 @@ class AuthService(Service):
 
         from forge.config import load_config
 
-        config = load_config()
+        config = load_config(app_name="forge")
         forgejo_cfg = config.get("forgejo", {})
 
         token = os.environ.get("FORGE_FORGEJO__TOKEN", forgejo_cfg.get("token", ""))

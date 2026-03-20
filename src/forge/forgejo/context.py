@@ -24,7 +24,7 @@ def _get_forgejo_host() -> str:
     if not url:
         from forge.config import load_config
 
-        config = load_config()
+        config = load_config(app_name="forge")
         url = config.get("forgejo", {}).get("url", "")
     if not url:
         return ""
@@ -292,5 +292,5 @@ def get_default_owner() -> str:
 
     from forge.config import load_config
 
-    config = load_config()
+    config = load_config(app_name="forge")
     return config.get("forgejo", {}).get("default_owner", "")

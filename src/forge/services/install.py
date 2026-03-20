@@ -15,7 +15,7 @@ from forge.config import load_config
 
 def _get_forgejo_config() -> dict[str, str]:
     """Get the forgejo config section."""
-    config = load_config()
+    config = load_config(app_name="forge")
     return config.get("forgejo", {})
 
 

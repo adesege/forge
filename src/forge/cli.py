@@ -62,7 +62,7 @@ def setup_logging(level: str = "INFO", service_name: str = "") -> None:
 def main(ctx: click.Context, config_path: str | None, log_level: str) -> None:
     """A click-clop CLI application"""
     ctx.ensure_object(dict)
-    ctx.obj["config"] = load_config(config_path, env_prefix="FORGE_")
+    ctx.obj["config"] = load_config(config_path, env_prefix="FORGE_", app_name="forge")
     setup_logging(level=log_level, service_name="forge")
 
 
