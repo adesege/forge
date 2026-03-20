@@ -510,7 +510,7 @@ wheels = [
 
 [[package]]
 name = "forge"
-version = "0.22.0"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
