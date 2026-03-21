@@ -5,29 +5,26 @@ from __future__ import annotations
 from click.testing import CliRunner
 
 from forge.cli import main
-from forge.services.completion import CompletionService
+from forge.services import completion
 
 
 class TestCompletionService:
-    """Test the CompletionService methods directly."""
+    """Test the completion service functions directly."""
 
     def test_bash_completion_script(self):
-        svc = CompletionService(_auto_register=False)
-        result = svc.bash()
+        result = completion.bash()
         assert "_forge_completion()" in result
         assert "_FORGE_COMPLETE=bash_complete" in result
         assert "complete " in result
 
     def test_zsh_completion_script(self):
-        svc = CompletionService(_auto_register=False)
-        result = svc.zsh()
+        result = completion.zsh()
         assert "_forge_completion()" in result
         assert "_FORGE_COMPLETE=zsh_complete" in result
         assert "compdef" in result
 
     def test_fish_completion_script(self):
-        svc = CompletionService(_auto_register=False)
-        result = svc.fish()
+        result = completion.fish()
         assert "_forge_completion" in result
         assert "_FORGE_COMPLETE=fish_complete" in result
         assert "complete " in result

@@ -2,78 +2,59 @@
 
 ## Project Overview
 
-A click-clop CLI application
-
+A Forgejo CLI and MCP tool built with click-clop.
 
 Every feature is simultaneously a CLI command (Click) and MCP tool (FastMCP) via the service-layer pattern.
-
 
 ## Architecture
 
 ```
-
 CLI (Click) ──┐
 MCP (FastMCP) ─┘──> Service Layer (plain functions) ──> Config / Secrets
-
-
 ```
 
-- **Services** live in `src/forge/services/`. Each module contains business logic as plain functions.
-- **CLI** commands are registered in `cli.py` as Click groups/commands wrapping service functions.
-
-- **MCP** are wired in `server.py`.
-
+- **Services** live in `src/forge/services/`. Each module contains business logic as plain functions (no classes).
+- **CLI** commands are manually registered in `cli.py` as Click groups/commands wrapping service functions.
+- **MCP** tools are manually registered in `server.py` via `@mcp.tool()` decorators.
 - **Config** is loaded from `config.toml` with env var overrides (`FORGE_*`).
-
-- **Secrets** are managed via 1Password (`op` CLI).
-
-
+- **Secrets** are managed via 1Password (`op` CLI) using `click_clop.secrets` helpers.
 
 ## Directory Structure
 
 ```
 src/forge/
-├── cli.py          # Click CLI entry point (auto-exposes services)
-
-├── server.py       # MCP server (auto-exposes services)
-
+├── cli.py          # Click CLI entry point (manually registers commands)
+├── server.py       # MCP server (manually registers tools)
 ├── config.py       # Config loader
-
-├── secrets.py      # 1Password service
-
+├── secrets.py      # 1Password secret functions
 ├── forgejo/        # Forgejo API client library
 │   ├── client.py   # HTTP client (httpx wrapper)
 │   ├── context.py  # Git remote → owner/repo detection
 │   ├── exceptions.py # API error types
 │   └── formatting.py # Rich output formatters
 └── services/       # Business logic goes here
-    ├── hello.py    # Example service
     ├── auth.py     # Forgejo auth (status, token)
     ├── repo.py     # Repository CRUD + search
     ├── issue.py    # Issue management
     ├── pr.py       # Pull request management
     ├── release.py  # Release management
     ├── org.py      # Organization management
+    ├── package.py  # Package registry operations
+    ├── install.py  # Repository configuration
+    ├── completion.py # Shell completion scripts
     └── ...         # Add new services here
 
 tests/
 ├── conftest.py     # Shared fixtures
 └── unit/           # Unit tests
 
-
 features/           # Gherkin BDD tests
 ├── steps/          # Step definitions
 └── *.feature       # Feature files
 
-
-
 docs/               # Sphinx documentation
 
-
-
-
 .forgejo/workflows/ # CI/CD pipelines
-
 ```
 
 ## Development Workflow
@@ -83,60 +64,56 @@ docs/               # Sphinx documentation
 | Install deps | `make install` |
 | Install with dev deps | `make install-dev` |
 | Run CLI | `uv run forge --help` |
-
 | Run tests | `make test` |
-
 | Run BDD tests | `make test-bdd` |
-
 | Lint | `make lint` |
 | Format | `make format` |
-
 | Build docs | `make docs` |
-
-
-
 | Build .deb | `make build-deb` |
-
-
-
 | Publish PyPI | `make publish-pypi` |
-
-
 | Publish .deb | `make publish-deb` |
-
-
 
 ## Adding a New Feature
 
 1. Create a new service in `src/forge/services/your_feature.py`:
    ```python
-   from click_clop.service import Service
+   """Your feature service — description."""
 
-   class YourFeatureService(Service):
-       name = "your-feature"
-       description = "What it does"
+   from __future__ import annotations
 
-       def your_method(self, arg: str) -> str:
-           """Method docstring becomes help text."""
-           return f"Result: {arg}"
 
-   _service = YourFeatureService()
+   def your_method(arg: str) -> str:
+       """Method docstring becomes help text."""
+       return f"Result: {arg}"
    ```
 
-2. Import it in `src/forge/services/__init__.py`
+2. Register CLI commands in `src/forge/cli.py`:
+   ```python
+   from forge.services import your_feature
 
-3. It's now automatically available as:
-   - CLI: `forge your-feature your-method --arg value`
+   @main.group("your-feature")
+   def your_feature_group() -> None:
+       """What it does."""
 
-   - MCP: tool `your-feature_your_method`
+   @your_feature_group.command("your-method")
+   @click.argument("arg")
+   def your_feature_your_method(arg: str) -> None:
+       """Method description."""
+       click.echo(your_feature.your_method(arg))
+   ```
 
+3. Register MCP tools in `src/forge/server.py`:
+   ```python
+   from forge.services import your_feature
 
+   @mcp.tool(name="your_feature_your_method", description="What it does")
+   def your_feature_your_method_tool(arg: str) -> str:
+       return your_feature.your_method(arg)
+   ```
 
 4. Write tests in `tests/unit/test_your_feature.py`
 
-
 5. Write a `.feature` file in `features/your_feature.feature`
-
 
 ## Agent Rules
 
@@ -146,7 +123,6 @@ When implementing changes:
 2. **Commit changes** in the worktree branch using `@@ai@@` as the commit message (git-good generates it)
 3. **Update documentation** if the change affects public APIs
 4. **Write tests**: unit tests in `tests/unit/` and `.feature` files in `features/`
-
 5. **Follow the service pattern**: business logic in services, not in CLI/MCP layers
 6. **If CLI-focused**: create a quick asciinema demo with `make demo`
 
@@ -199,7 +175,6 @@ When a bump is selected, the hook updates `pyproject.toml`, stages it, and the `
 
 The commit template is at `.git-templates/commit-message.txt` — install hooks with `make hooks`.
 
-
 ### Build Verification Checklist
 
 Before pushing or tagging a release, agents MUST verify:
@@ -207,14 +182,9 @@ Before pushing or tagging a release, agents MUST verify:
 - [ ] `make format` passes (code formatted)
 - [ ] `make lint` passes (ruff + mypy)
 - [ ] `make test` passes (all unit tests green)
-
 - [ ] `make test-bdd` passes (all BDD scenarios green)
-
 - [ ] `make build` succeeds (wheel builds cleanly)
-
-
 - [ ] `make build-deb` succeeds (Debian package builds without errors)
-
 
 These are **not optional** — they are the definition of done. The pre-commit hook enforces ruff + pytest, so commits will fail if these checks don't pass.
 
@@ -228,8 +198,6 @@ To publish a release:
 
 For manual releases, `make release BUMP=patch|minor|major` is also available.
 
-
-
 ## CI/CD & Publishing
 
 This project uses **Forgejo Actions** for CI/CD. Workflows are in `.forgejo/workflows/`.
@@ -238,20 +206,13 @@ This project uses **Forgejo Actions** for CI/CD. Workflows are in `.forgejo/work
 |----------|---------|---------|
 | `ci.yml` | Push/PR to main | Lint, type-check, test |
 | `publish-package.yml` | Tag `v*` | Build + publish to Forgejo PyPI |
-
-
 | `publish-deb.yml` | Tag `v*` | Build + upload .deb to Forgejo Debian registry |
-
 
 **Registry URLs** (Forgejo at `git.app.home.southroute.com`):
 - PyPI: `https://git.app.home.southroute.com/api/packages/southroute/pypi`
-
-
 - Debian: `https://git.app.home.southroute.com/api/packages/southroute/debian`
 
-
 **Authentication**: Workflows use the automatic `github.token` provided by Forgejo Actions — no manual secret setup required. For local `make publish-*` commands, `FORGEJO_TOKEN` is resolved in order (last wins): `~/.config/click-clop/config.toml` → project `config.toml` → `config.local.toml`, reading the `[forgejo]` section (`token` or `token_cmd`). Put your actual token in `config.local.toml` (gitignored) or `~/.config/click-clop/config.toml` for a shared default across projects. Override with `make publish-pypi FORGEJO_TOKEN=<token>` if needed.
-
 
 ## Git Conventions
 
@@ -270,18 +231,13 @@ This project uses **Forgejo Actions** for CI/CD. Workflows are in `.forgejo/work
 - `config.local.toml` — local overrides (gitignored)
 - Environment variables: `FORGE_<SECTION>__<KEY>=value`
 
-
 ## Installing from Forgejo
 
 ```bash
 # Python package
 pip install forge --index-url https://git.app.home.southroute.com/api/packages/southroute/pypi/simple/
 
-
-
 # Debian package
 echo "deb https://git.app.home.southroute.com/api/packages/southroute/debian trixie main" | sudo tee /etc/apt/sources.list.d/forgejo.list
 sudo apt-get update && sudo apt-get install forge
-
 ```
-

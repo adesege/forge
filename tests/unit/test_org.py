@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from forge.services.org import OrgService
+from forge.services import org
 
 
 class TestOrgService:
-    """Tests for OrgService."""
+    """Tests for org service functions."""
 
     def test_list(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = [
@@ -16,14 +16,12 @@ class TestOrgService:
                 "visibility": "public",
             },
         ]
-        svc = OrgService(_auto_register=False)
-        result = svc.list()
+        result = org.list_orgs()
         assert "myorg" in result
 
     def test_list_empty(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
-        svc = OrgService(_auto_register=False)
-        result = svc.list()
+        result = org.list_orgs()
         assert "No organizations found" in result
 
     def test_view(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
@@ -34,13 +32,11 @@ class TestOrgService:
             "location": "Earth",
             "website": "https://example.com",
         }
-        svc = OrgService(_auto_register=False)
-        result = svc.view(org="myorg")
+        result = org.view(org="myorg")
         assert "myorg" in result
 
     def test_view_no_org(self) -> None:
-        svc = OrgService(_auto_register=False)
-        result = svc.view()
+        result = org.view()
         assert "Error" in result
 
     def test_repos(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
@@ -52,24 +48,20 @@ class TestOrgService:
                 "language": "Python",
             },
         ]
-        svc = OrgService(_auto_register=False)
-        result = svc.repos(org="myorg")
+        result = org.repos(org="myorg")
         assert "myorg/repo1" in result
 
     def test_repos_no_org(self) -> None:
-        svc = OrgService(_auto_register=False)
-        result = svc.repos()
+        result = org.repos()
         assert "Error" in result
 
     def test_members(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = [
             {"login": "alice", "full_name": "Alice", "email": "alice@example.com"},
         ]
-        svc = OrgService(_auto_register=False)
-        result = svc.members(org="myorg")
+        result = org.members(org="myorg")
         assert "alice" in result
 
     def test_members_no_org(self) -> None:
-        svc = OrgService(_auto_register=False)
-        result = svc.members()
+        result = org.members()
         assert "Error" in result

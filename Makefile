@@ -60,9 +60,14 @@ test-all: test test-bdd ## Run unit + BDD tests
 
 
 .PHONY: coverage
-coverage: ## Generate test coverage report
-	$(PYTEST) tests/ --cov=src/forge --cov-report=html --cov-report=term
+coverage: ## Generate combined HTML coverage report
+	$(PYTEST) tests/ --cov-report=html --cov-report=term
 	@echo "Coverage report: htmlcov/index.html"
+
+.PHONY: coverage-unit
+coverage-unit: ## Coverage for unit tests only
+	$(PYTEST) tests/unit -v --cov-report=html:htmlcov-unit --cov-report=term
+	@echo "Unit coverage report: htmlcov-unit/index.html"
 
 .PHONY: run
 run: ## Run the CLI
@@ -214,7 +219,7 @@ clean: ## Clean build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .mypy_cache -exec rm -rf {} + 2>/dev/null || true
-	rm -rf build/ dist/ *.egg-info .coverage htmlcov/
+	rm -rf build/ dist/ *.egg-info .coverage htmlcov/ htmlcov-unit/
 
 .PHONY: build
 build: clean ## Build distribution package

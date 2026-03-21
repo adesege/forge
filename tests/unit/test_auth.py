@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from forge.services.auth import AuthService
+from forge.services import auth
 
 
 class TestAuthService:
-    """Tests for AuthService."""
+    """Tests for auth service functions."""
 
     def test_status_returns_user_info(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = {
@@ -17,8 +17,7 @@ class TestAuthService:
             "email": "test@example.com",
             "is_admin": False,
         }
-        svc = AuthService(_auto_register=False)
-        result = svc.status()
+        result = auth.status()
         assert "testuser" in result
         mock_forgejo_client.get.assert_called_once_with("/user")
 
@@ -30,8 +29,7 @@ class TestAuthService:
                 return_value={"forgejo": {"token": ""}},
             ),
         ):
-            svc = AuthService(_auto_register=False)
-            result = svc.token()
+            result = auth.token()
             assert "****7890" in result
             assert "environment variable" in result
 
@@ -43,8 +41,7 @@ class TestAuthService:
                 return_value={"forgejo": {"token": "abcdef1234"}},
             ),
         ):
-            svc = AuthService(_auto_register=False)
-            result = svc.token()
+            result = auth.token()
             assert "****1234" in result
             assert "config file" in result
 
@@ -56,6 +53,5 @@ class TestAuthService:
                 return_value={"forgejo": {}},
             ),
         ):
-            svc = AuthService(_auto_register=False)
-            result = svc.token()
+            result = auth.token()
             assert "No token configured" in result

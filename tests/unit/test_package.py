@@ -9,11 +9,12 @@ import tarfile
 
 import pytest
 
-from forge.services.package import PackageService, _build_cargo_payload, _extract_cargo_toml
+from forge.services import package
+from forge.services.package import _build_cargo_payload, _extract_cargo_toml
 
 
 class TestPackageService:
-    """Tests for PackageService."""
+    """Tests for package service functions."""
 
     def test_list(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = [
@@ -25,14 +26,12 @@ class TestPackageService:
                 "created_at": "2026-01-01",
             },
         ]
-        svc = PackageService(_auto_register=False)
-        result = svc.list(owner="testuser")
+        result = package.list_packages(owner="testuser")
         assert "my-pkg" in result
 
     def test_list_empty(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
-        svc = PackageService(_auto_register=False)
-        result = svc.list(owner="testuser")
+        result = package.list_packages(owner="testuser")
         assert "No packages found" in result
 
     def test_list_with_type_filter(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
@@ -45,8 +44,7 @@ class TestPackageService:
                 "created_at": "2026-01-01",
             },
         ]
-        svc = PackageService(_auto_register=False)
-        result = svc.list(owner="testuser", type="pypi")
+        result = package.list_packages(owner="testuser", type="pypi")
         mock_forgejo_client.get.assert_called_once_with(
             "/packages/testuser",
             params={"limit": 30, "page": 1, "type": "pypi"},
@@ -62,56 +60,47 @@ class TestPackageService:
             "created_at": "2026-01-01",
             "html_url": "https://example.com/packages/my-pkg",
         }
-        svc = PackageService(_auto_register=False)
-        result = svc.view(name="my-pkg", version="1.0.0", type="generic", owner="o")
+        result = package.view_package(name="my-pkg", version="1.0.0", type="generic", owner="o")
         assert "my-pkg" in result
 
     def test_view_missing_name(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.view(version="1.0.0", type="generic", owner="o")
+        result = package.view_package(version="1.0.0", type="generic", owner="o")
         assert "Error" in result
 
     def test_view_missing_version(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.view(name="pkg", type="generic", owner="o")
+        result = package.view_package(name="pkg", type="generic", owner="o")
         assert "Error" in result
 
     def test_view_missing_type(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.view(name="pkg", version="1.0.0", owner="o")
+        result = package.view_package(name="pkg", version="1.0.0", owner="o")
         assert "Error" in result
 
     def test_files(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = [
             {"name": "file.bin", "size": 1024, "md5": "abc123"},
         ]
-        svc = PackageService(_auto_register=False)
-        result = svc.files(name="my-pkg", version="1.0.0", type="generic", owner="o")
+        result = package.files(name="my-pkg", version="1.0.0", type="generic", owner="o")
         assert "file.bin" in result
 
     def test_files_empty(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
-        svc = PackageService(_auto_register=False)
-        result = svc.files(name="my-pkg", version="1.0.0", type="generic", owner="o")
+        result = package.files(name="my-pkg", version="1.0.0", type="generic", owner="o")
         assert "No files found" in result
 
     def test_delete(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.delete.return_value = None
-        svc = PackageService(_auto_register=False)
-        result = svc.delete(name="my-pkg", version="1.0.0", type="generic", owner="o")
+        result = package.delete_package(name="my-pkg", version="1.0.0", type="generic", owner="o")
         assert "Deleted" in result
 
     def test_delete_missing_name(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.delete(version="1.0.0", type="generic", owner="o")
+        result = package.delete_package(version="1.0.0", type="generic", owner="o")
         assert "Error" in result
 
     def test_publish(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         test_file = tmp_path / "artifact.bin"
         test_file.write_bytes(b"hello")
         mock_forgejo_client.put_file.return_value = None
-        svc = PackageService(_auto_register=False)
-        result = svc.publish(name="my-pkg", version="1.0.0", file=str(test_file), owner="o")
+        result = package.publish(name="my-pkg", version="1.0.0", file=str(test_file), owner="o")
         assert "Published" in result
         assert "artifact.bin" in result
         mock_forgejo_client.put_file.assert_called_once_with(
@@ -120,21 +109,20 @@ class TestPackageService:
         )
 
     def test_publish_missing_file(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.publish(name="pkg", version="1.0.0", owner="o")
+        result = package.publish(name="pkg", version="1.0.0", owner="o")
         assert "Error" in result
 
     def test_publish_file_not_found(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.publish(name="pkg", version="1.0.0", file="/nonexistent/file.bin", owner="o")
+        result = package.publish(
+            name="pkg", version="1.0.0", file="/nonexistent/file.bin", owner="o"
+        )
         assert "Error" in result
         assert "not found" in result
 
     def test_download(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.download_file.return_value = b"file content"
-        svc = PackageService(_auto_register=False)
         out_path = str(tmp_path / "output.bin")
-        result = svc.download(
+        result = package.download(
             name="my-pkg",
             version="1.0.0",
             filename="artifact.bin",
@@ -146,16 +134,14 @@ class TestPackageService:
             assert f.read() == b"file content"
 
     def test_download_missing_filename(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.download(name="pkg", version="1.0.0", owner="o")
+        result = package.download(name="pkg", version="1.0.0", owner="o")
         assert "Error" in result
 
     def test_publish_deb(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         deb_file = tmp_path / "forge_1.0.0_all.deb"
         deb_file.write_bytes(b"deb-content")
         mock_forgejo_client.put_file.return_value = None
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_deb(file=str(deb_file), owner="o")
+        result = package.publish_deb(file=str(deb_file), owner="o")
         assert "Published" in result
         assert "trixie/main" in result
         mock_forgejo_client.put_file.assert_called_once_with(
@@ -167,8 +153,7 @@ class TestPackageService:
         deb_file = tmp_path / "forge_1.0.0_all.deb"
         deb_file.write_bytes(b"deb-content")
         mock_forgejo_client.put_file.return_value = None
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_deb(
+        result = package.publish_deb(
             file=str(deb_file), owner="o", distribution="bookworm", component="contrib"
         )
         assert "Published" in result
@@ -179,13 +164,11 @@ class TestPackageService:
         )
 
     def test_publish_deb_missing_file(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_deb(owner="o")
+        result = package.publish_deb(owner="o")
         assert "Error" in result
 
     def test_publish_deb_file_not_found(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_deb(file="/nonexistent/file.deb", owner="o")
+        result = package.publish_deb(file="/nonexistent/file.deb", owner="o")
         assert "Error" in result
         assert "not found" in result
 
@@ -267,8 +250,7 @@ pretty_assertions = "1.0"
     def test_publish_crate_success(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         crate_path = _make_crate(tmp_path)
         mock_forgejo_client.put_file.return_value = None
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_crate(file=crate_path, owner="o")
+        result = package.publish_crate(file=crate_path, owner="o")
         assert "Published" in result
         assert "my-crate" in result
         assert "0.1.0" in result
@@ -277,21 +259,18 @@ pretty_assertions = "1.0"
         assert call_args[0][0] == "/api/packages/o/cargo/api/v1/crates/new"
 
     def test_publish_crate_missing_file(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_crate(owner="o")
+        result = package.publish_crate(owner="o")
         assert "Error" in result
 
     def test_publish_crate_file_not_found(self) -> None:
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_crate(file="/nonexistent/crate.crate", owner="o")
+        result = package.publish_crate(file="/nonexistent/crate.crate", owner="o")
         assert "Error" in result
         assert "not found" in result
 
     def test_publish_crate_wrong_extension(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
         bad_file = tmp_path / "something.tar.gz"
         bad_file.write_bytes(b"data")
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_crate(file=str(bad_file), owner="o")
+        result = package.publish_crate(file=str(bad_file), owner="o")
         assert "Error" in result
         assert ".crate" in result
 
@@ -306,8 +285,7 @@ openssl = "0.10"
 """
         crate_path = _make_crate(tmp_path, extra_toml=extra)
         mock_forgejo_client.put_file.return_value = None
-        svc = PackageService(_auto_register=False)
-        result = svc.publish_crate(file=crate_path, owner="o")
+        result = package.publish_crate(file=crate_path, owner="o")
         assert "Published" in result
 
         # Verify the payload structure

@@ -1,7 +1,7 @@
 forge
 =====
 
-A click-clop CLI application
+A Forgejo CLI and MCP tool built with click-clop.
 
 Installation
 ============
@@ -21,13 +21,10 @@ CLI
 
    forge --help
 
-Server (REST + MCP)
--------------------
+MCP Server
+----------
 
-.. code-block:: bash
-
-   make serve
-   # Swagger UI at http://localhost:8000/docs
+The MCP server exposes all service functions as tools for AI assistants.
 
 API Reference
 =============

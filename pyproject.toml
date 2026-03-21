@@ -53,11 +53,24 @@ packages = ["src/forge"]
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
-addopts = "--strict-markers -v"
+addopts = "--strict-markers -v --cov=src/forge --cov-report=term-missing"
 markers = [
     "unit: Unit tests",
     "integration: Integration tests",
     "bdd: BDD feature tests",
+]
+
+[tool.coverage.run]
+source = ["src/forge"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.",
 ]
 
 [tool.ruff]
