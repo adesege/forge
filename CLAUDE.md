@@ -265,10 +265,59 @@ This project uses **Forgejo Actions** for CI/CD. Workflows are in `.forgejo/work
 
 ## Config
 
-- `config.toml` — base config
-- `config.dev.toml` — development overrides
-- `config.local.toml` — local overrides (gitignored)
-- Environment variables: `FORGE_<SECTION>__<KEY>=value`
+Configuration is loaded by `src/forge/config.py:load_config()`. Files are loaded in order with deep-merging (later values win):
+
+1. **`.env`** — loaded into the environment first (does not overwrite existing env vars)
+2. **`config.toml`** — base/default configuration (committed)
+3. **`config.dev.toml`** — development overrides (committed)
+4. **`config.local.toml`** — local/personal overrides (gitignored)
+5. **`~/.config/forge/config.toml`** — user-wide defaults (XDG config, resolved via `app_name="forge"`)
+6. **`~/.config/forge/config.local.toml`** — user-wide local overrides (XDG config)
+7. **Explicit `config_path`** — if passed via CLI `--config` flag
+8. **Environment variables** — `FORGE_<SECTION>__<KEY>=value` (highest priority)
+
+Steps 1–4 use the current working directory. Steps 5–6 use `$XDG_CONFIG_HOME/forge/` (defaults to `~/.config/forge/`).
+
+### Config Sections
+
+```toml
+[server]
+host = "0.0.0.0"
+port = 8000
+
+[logging]
+level = "INFO"          # DEBUG, INFO, WARNING, ERROR, CRITICAL
+json_output = true
+
+[telemetry]
+enabled = true
+otlp_endpoint = "http://localhost:4317"
+
+[onepassword]
+vault = ""
+
+[forgejo]
+url = "https://git.example.com"
+token = "your-token-here"
+# OR use a command for dynamic retrieval:
+# token_cmd = 'op read "op://Dev/Forgejo/token"'
+default_owner = "my-org"
+```
+
+### Environment Variable Overrides
+
+Env vars use the prefix `FORGE_` with double underscores (`__`) as section separators:
+
+- `FORGE_SERVER__PORT=9000` → `config["server"]["port"] = "9000"`
+- `FORGE_FORGEJO__URL=https://git.example.com` → `config["forgejo"]["url"] = "https://git.example.com"`
+- `FORGE_LOGGING__LEVEL=DEBUG` → `config["logging"]["level"] = "DEBUG"`
+
+### Recommended Setup
+
+- Put shared defaults in `config.toml` (committed)
+- Put development overrides in `config.dev.toml` (committed)
+- Put secrets and personal settings in `config.local.toml` (gitignored)
+- For settings shared across multiple projects, use `~/.config/forge/config.toml`
 
 
 ## Installing from Forgejo
