@@ -7,13 +7,14 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from forge.services.install import (
-    InstallService,
     _get_forgejo_config,
     _get_forgejo_token,
     _get_forgejo_url,
     _get_os_release,
     _get_package_owner,
     _serialize_toml,
+    debian,
+    pypi,
 )
 
 
@@ -167,7 +168,7 @@ class TestGetOsRelease:
 
 
 class TestInstallServicePypi:
-    """Tests for InstallService.pypi()."""
+    """Tests for pypi()."""
 
     def test_pypi_adds_index(self, tmp_path: Path) -> None:
         uv_config = tmp_path / ".config" / "uv" / "uv.toml"
@@ -178,8 +179,7 @@ class TestInstallServicePypi:
             ),
             patch("forge.services.install.Path.home", return_value=tmp_path),
         ):
-            svc = InstallService(_auto_register=False)
-            result = svc.pypi()
+            result = pypi()
             assert "Added PyPI index" in result
             assert uv_config.exists()
             content = uv_config.read_text()
@@ -197,14 +197,12 @@ class TestInstallServicePypi:
             ),
             patch("forge.services.install.Path.home", return_value=tmp_path),
         ):
-            svc = InstallService(_auto_register=False)
-            result = svc.pypi()
+            result = pypi()
             assert "Already configured" in result
 
     def test_pypi_no_owner(self) -> None:
         with patch("forge.services.install.load_config", return_value={}):
-            svc = InstallService(_auto_register=False)
-            result = svc.pypi()
+            result = pypi()
             assert "Error" in result
             assert "no owner" in result
 
@@ -213,14 +211,13 @@ class TestInstallServicePypi:
             patch("forge.services.install.load_config", return_value={}),
             patch("forge.services.install.Path.home", return_value=tmp_path),
         ):
-            svc = InstallService(_auto_register=False)
-            result = svc.pypi(owner="explicit")
+            result = pypi(owner="explicit")
             assert "Added PyPI index" in result
             assert "explicit" in result
 
 
 class TestInstallServiceDebian:
-    """Tests for InstallService.debian()."""
+    """Tests for debian()."""
 
     def test_debian_not_debian_system(self) -> None:
         with (
@@ -230,8 +227,7 @@ class TestInstallServiceDebian:
             ),
             patch("forge.services.install.load_config", return_value={}),
         ):
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Error" in result
             assert "not a Debian-based system" in result
 
@@ -243,8 +239,7 @@ class TestInstallServiceDebian:
             ),
             patch("forge.services.install.load_config", return_value={}),
         ):
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Error" in result
             assert "no owner" in result
 
@@ -259,8 +254,7 @@ class TestInstallServiceDebian:
                 return_value={"forgejo": {"package_owner": "org"}},
             ),
         ):
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Error" in result
             assert "codename" in result
 
@@ -280,8 +274,7 @@ class TestInstallServiceDebian:
             ),
             patch.dict("os.environ", {}, clear=True),
         ):
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Error" in result
             assert "token" in result.lower()
 
@@ -320,8 +313,7 @@ class TestInstallServiceDebian:
 
             mock_path_cls.side_effect = path_side_effect
 
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Already configured" in result
 
     def test_debian_success(self) -> None:
@@ -357,8 +349,7 @@ class TestInstallServiceDebian:
 
             mock_path_cls.side_effect = path_side_effect
 
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Added Debian repository" in result
 
     def test_debian_auth_write_error(self) -> None:
@@ -399,8 +390,7 @@ class TestInstallServiceDebian:
 
             mock_path_cls.side_effect = path_side_effect
 
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Error writing" in result
 
     def test_debian_apt_update_error(self) -> None:
@@ -443,8 +433,7 @@ class TestInstallServiceDebian:
 
             mock_path_cls.side_effect = path_side_effect
 
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "apt-get update failed" in result
 
     def test_debian_sources_write_error(self) -> None:
@@ -485,8 +474,7 @@ class TestInstallServiceDebian:
 
             mock_path_cls.side_effect = path_side_effect
 
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Error writing" in result
 
     def test_debian_ubuntu_like(self) -> None:
@@ -520,8 +508,7 @@ class TestInstallServiceDebian:
 
             mock_path_cls.side_effect = path_side_effect
 
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Added Debian repository" in result
 
     def test_debian_dpkg_fails_defaults_to_amd64(self) -> None:
@@ -561,7 +548,6 @@ class TestInstallServiceDebian:
 
             mock_path_cls.side_effect = path_side_effect
 
-            svc = InstallService(_auto_register=False)
-            result = svc.debian()
+            result = debian()
             assert "Added Debian repository" in result
             assert "amd64" in result

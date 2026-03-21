@@ -5,6 +5,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from forge.services import issue
+from forge.services.issue import _resolve_labels
 
 
 class TestIssueService:
@@ -120,21 +121,18 @@ class TestIssueService:
             "body": "",
         }
         with patch("forge.services.issue.get_repo_context", return_value=("o", "r")):
-            svc = IssueService(_auto_register=False)
-            result = svc.view(number=1)
+            result = issue.view(number=1)
             assert "#1" in result
 
     def test_create_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"number": 1, "title": "T", "html_url": ""}
         with patch("forge.services.issue.get_repo_context", return_value=("o", "r")):
-            svc = IssueService(_auto_register=False)
-            result = svc.create(title="T")
+            result = issue.create(title="T")
             assert "#1" in result
 
     def test_create_with_body_and_assignees_and_milestone(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"number": 7, "title": "Full", "html_url": ""}
-        svc = IssueService(_auto_register=False)
-        result = svc.create(
+        result = issue.create(
             title="Full",
             body="body text",
             assignees="alice,bob",
@@ -151,58 +149,48 @@ class TestIssueService:
     def test_close_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.patch.return_value = {"number": 1, "state": "closed"}
         with patch("forge.services.issue.get_repo_context", return_value=("o", "r")):
-            svc = IssueService(_auto_register=False)
-            result = svc.close(number=1)
+            result = issue.close(number=1)
             assert "Closed" in result
 
     def test_close_no_number(self) -> None:
-        svc = IssueService(_auto_register=False)
-        result = svc.close(owner="o", repo="r")
+        result = issue.close(owner="o", repo="r")
         assert "Error" in result
 
     def test_reopen_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.patch.return_value = {"number": 1, "state": "open"}
         with patch("forge.services.issue.get_repo_context", return_value=("o", "r")):
-            svc = IssueService(_auto_register=False)
-            result = svc.reopen(number=1)
+            result = issue.reopen(number=1)
             assert "Reopened" in result
 
     def test_reopen_no_number(self) -> None:
-        svc = IssueService(_auto_register=False)
-        result = svc.reopen(owner="o", repo="r")
+        result = issue.reopen(owner="o", repo="r")
         assert "Error" in result
 
     def test_comment_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"html_url": ""}
         with patch("forge.services.issue.get_repo_context", return_value=("o", "r")):
-            svc = IssueService(_auto_register=False)
-            result = svc.comment(number=1, body="txt")
+            result = issue.comment(number=1, body="txt")
             assert "Added comment" in result
 
     def test_comment_no_number(self) -> None:
-        svc = IssueService(_auto_register=False)
-        result = svc.comment(body="txt", owner="o", repo="r")
+        result = issue.comment(body="txt", owner="o", repo="r")
         assert "Error" in result
 
     def test_edit_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.patch.return_value = {"number": 1, "title": "T"}
         with patch("forge.services.issue.get_repo_context", return_value=("o", "r")):
-            svc = IssueService(_auto_register=False)
-            result = svc.edit(number=1, title="T")
+            result = issue.edit(number=1, title="T")
             assert "Updated" in result
 
     def test_edit_no_number(self) -> None:
-        svc = IssueService(_auto_register=False)
-        result = svc.edit(owner="o", repo="r")
+        result = issue.edit(owner="o", repo="r")
         assert "Error" in result
 
     def test_edit_body_only(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.patch.return_value = {"number": 1, "title": "T"}
-        svc = IssueService(_auto_register=False)
-        result = svc.edit(number=1, body="new body", owner="o", repo="r")
+        result = issue.edit(number=1, body="new body", owner="o", repo="r")
         assert "Updated" in result
 
     def test_resolve_labels_empty(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        svc = IssueService(_auto_register=False)
-        result = svc._resolve_labels(mock_forgejo_client, "o", "r", "")
+        result = _resolve_labels(mock_forgejo_client, "o", "r", "")
         assert result == []

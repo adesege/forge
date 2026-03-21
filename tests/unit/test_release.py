@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from forge.services import release
-from forge.services.release import ReleaseService
 from unittest.mock import patch
+
+from forge.services import release
 
 
 class TestReleaseService:
@@ -72,8 +72,7 @@ class TestReleaseService:
     def test_list_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
         with patch("forge.services.release.get_repo_context", return_value=("o", "r")):
-            svc = ReleaseService(_auto_register=False)
-            result = svc.list()
+            result = release.list_releases()
             assert "No releases found" in result
 
     def test_view_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
@@ -88,21 +87,18 @@ class TestReleaseService:
             "assets": [],
         }
         with patch("forge.services.release.get_repo_context", return_value=("o", "r")):
-            svc = ReleaseService(_auto_register=False)
-            result = svc.view(tag="v1.0")
+            result = release.view(tag="v1.0")
             assert "R" in result
 
     def test_create_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"name": "v2.0", "html_url": ""}
         with patch("forge.services.release.get_repo_context", return_value=("o", "r")):
-            svc = ReleaseService(_auto_register=False)
-            result = svc.create(tag="v2.0")
+            result = release.create(tag="v2.0")
             assert "v2.0" in result
 
     def test_create_with_body(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"name": "v2.0", "html_url": ""}
-        svc = ReleaseService(_auto_register=False)
-        result = svc.create(tag="v2.0", body="Notes", owner="o", repo="r")
+        result = release.create(tag="v2.0", body="Notes", owner="o", repo="r")
         assert "v2.0" in result
         call_json = mock_forgejo_client.post.call_args[1]["json"]
         assert call_json["body"] == "Notes"
@@ -111,31 +107,26 @@ class TestReleaseService:
         mock_forgejo_client.get.return_value = {"id": 1, "tag_name": "v1.0"}
         mock_forgejo_client.delete.return_value = None
         with patch("forge.services.release.get_repo_context", return_value=("o", "r")):
-            svc = ReleaseService(_auto_register=False)
-            result = svc.delete(tag="v1.0")
+            result = release.delete(tag="v1.0")
             assert "Deleted" in result
 
     def test_delete_no_tag(self) -> None:
-        svc = ReleaseService(_auto_register=False)
-        result = svc.delete(owner="o", repo="r")
+        result = release.delete(owner="o", repo="r")
         assert "Error" in result
 
     def test_edit_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = {"id": 1}
         mock_forgejo_client.patch.return_value = {"name": "E"}
         with patch("forge.services.release.get_repo_context", return_value=("o", "r")):
-            svc = ReleaseService(_auto_register=False)
-            result = svc.edit(tag="v1.0", title="E")
+            result = release.edit(tag="v1.0", title="E")
             assert "E" in result
 
     def test_edit_no_tag(self) -> None:
-        svc = ReleaseService(_auto_register=False)
-        result = svc.edit(owner="o", repo="r")
+        result = release.edit(owner="o", repo="r")
         assert "Error" in result
 
     def test_edit_with_body(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = {"id": 1}
         mock_forgejo_client.patch.return_value = {"name": "R"}
-        svc = ReleaseService(_auto_register=False)
-        result = svc.edit(tag="v1.0", body="Updated notes", owner="o", repo="r")
+        result = release.edit(tag="v1.0", body="Updated notes", owner="o", repo="r")
         assert "R" in result

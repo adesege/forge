@@ -109,21 +109,18 @@ class TestPullRequestService:
             "body": "",
         }
         with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
-            svc = PullRequestService(_auto_register=False)
-            result = svc.view(number=1)
+            result = pr.view(number=1)
             assert "#1" in result
 
     def test_create_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"number": 1, "title": "PR", "html_url": ""}
         with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
-            svc = PullRequestService(_auto_register=False)
-            result = svc.create(title="PR", head="feature")
+            result = pr.create(title="PR", head="feature")
             assert "#1" in result
 
     def test_create_with_body(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"number": 1, "title": "PR", "html_url": ""}
-        svc = PullRequestService(_auto_register=False)
-        result = svc.create(title="PR", head="f", body="Description", owner="o", repo="r")
+        result = pr.create(title="PR", head="f", body="Description", owner="o", repo="r")
         assert "#1" in result
         call_json = mock_forgejo_client.post.call_args[1]["json"]
         assert call_json["body"] == "Description"
@@ -131,65 +128,54 @@ class TestPullRequestService:
     def test_merge_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = None
         with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
-            svc = PullRequestService(_auto_register=False)
-            result = svc.merge(number=1)
+            result = pr.merge(number=1)
             assert "Merged" in result
 
     def test_merge_no_number(self) -> None:
-        svc = PullRequestService(_auto_register=False)
-        result = svc.merge(owner="o", repo="r")
+        result = pr.merge(owner="o", repo="r")
         assert "Error" in result
 
     def test_close_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.patch.return_value = {"number": 1, "state": "closed"}
         with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
-            svc = PullRequestService(_auto_register=False)
-            result = svc.close(number=1)
+            result = pr.close(number=1)
             assert "Closed" in result
 
     def test_close_no_number(self) -> None:
-        svc = PullRequestService(_auto_register=False)
-        result = svc.close(owner="o", repo="r")
+        result = pr.close(owner="o", repo="r")
         assert "Error" in result
 
     def test_reopen_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.patch.return_value = {"number": 1, "state": "open"}
         with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
-            svc = PullRequestService(_auto_register=False)
-            result = svc.reopen(number=1)
+            result = pr.reopen(number=1)
             assert "Reopened" in result
 
     def test_reopen_no_number(self) -> None:
-        svc = PullRequestService(_auto_register=False)
-        result = svc.reopen(owner="o", repo="r")
+        result = pr.reopen(owner="o", repo="r")
         assert "Error" in result
 
     def test_diff_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get_raw.return_value = "diff text"
         with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
-            svc = PullRequestService(_auto_register=False)
-            result = svc.diff(number=1)
+            result = pr.diff(number=1)
             assert "diff text" in result
 
     def test_diff_no_number(self) -> None:
-        svc = PullRequestService(_auto_register=False)
-        result = svc.diff(owner="o", repo="r")
+        result = pr.diff(owner="o", repo="r")
         assert "Error" in result
 
     def test_review_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"id": 1}
         with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
-            svc = PullRequestService(_auto_register=False)
-            result = svc.review(number=1, event="APPROVE")
+            result = pr.review(number=1, event="APPROVE")
             assert "APPROVE" in result
 
     def test_review_no_number(self) -> None:
-        svc = PullRequestService(_auto_register=False)
-        result = svc.review(owner="o", repo="r")
+        result = pr.review(owner="o", repo="r")
         assert "Error" in result
 
     def test_review_with_body(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.post.return_value = {"id": 1}
-        svc = PullRequestService(_auto_register=False)
-        result = svc.review(number=1, body="LGTM", event="COMMENT", owner="o", repo="r")
+        result = pr.review(number=1, body="LGTM", event="COMMENT", owner="o", repo="r")
         assert "COMMENT" in result

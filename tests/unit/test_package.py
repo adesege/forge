@@ -176,14 +176,12 @@ class TestPackageService:
     def test_list_infers_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
         with patch("forge.services.package.get_default_owner", return_value="default-org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.list()
+            result = package.list_packages()
             assert "No packages found" in result
 
     def test_list_with_query(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
-        svc = PackageService(_auto_register=False)
-        result = svc.list(owner="o", query="search")
+        result = package.list_packages(owner="o", query="search")
         mock_forgejo_client.get.assert_called_once_with(
             "/packages/o",
             params={"limit": 30, "page": 1, "q": "search"},
@@ -198,86 +196,73 @@ class TestPackageService:
             "created_at": "",
         }
         with patch("forge.services.package.get_default_owner", return_value="org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.view(name="pkg", version="1.0", type="generic")
+            result = package.view_package(name="pkg", version="1.0", type="generic")
             assert "pkg" in result
 
     def test_files_infers_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = [{"name": "f", "size": 10, "md5": "abc"}]
         with patch("forge.services.package.get_default_owner", return_value="org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.files(name="pkg", version="1.0", type="generic")
+            result = package.files(name="pkg", version="1.0", type="generic")
             assert "f" in result
 
     def test_files_missing_args(self) -> None:
-        svc = PackageService(_auto_register=False)
-        assert "Error" in svc.files(version="1.0", type="g", owner="o")
-        assert "Error" in svc.files(name="p", type="g", owner="o")
-        assert "Error" in svc.files(name="p", version="1.0", owner="o")
+        assert "Error" in package.files(version="1.0", type="g", owner="o")
+        assert "Error" in package.files(name="p", type="g", owner="o")
+        assert "Error" in package.files(name="p", version="1.0", owner="o")
 
     def test_delete_infers_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.delete.return_value = None
         with patch("forge.services.package.get_default_owner", return_value="org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.delete(name="pkg", version="1.0", type="generic")
+            result = package.delete_package(name="pkg", version="1.0", type="generic")
             assert "Deleted" in result
 
     def test_delete_missing_args(self) -> None:
-        svc = PackageService(_auto_register=False)
-        assert "Error" in svc.delete(version="1.0", type="g", owner="o")
-        assert "Error" in svc.delete(name="p", type="g", owner="o")
-        assert "Error" in svc.delete(name="p", version="1.0", owner="o")
+        assert "Error" in package.delete_package(version="1.0", type="g", owner="o")
+        assert "Error" in package.delete_package(name="p", type="g", owner="o")
+        assert "Error" in package.delete_package(name="p", version="1.0", owner="o")
 
     def test_publish_infers_owner(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         f = tmp_path / "file.bin"
         f.write_bytes(b"data")
         mock_forgejo_client.put_file.return_value = None
         with patch("forge.services.package.get_default_owner", return_value="org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.publish(name="pkg", version="1.0", file=str(f))
+            result = package.publish(name="pkg", version="1.0", file=str(f))
             assert "Published" in result
 
     def test_publish_missing_name(self) -> None:
-        svc = PackageService(_auto_register=False)
-        assert "Error" in svc.publish(version="1.0", owner="o")
+        assert "Error" in package.publish(version="1.0", owner="o")
 
     def test_publish_missing_version(self) -> None:
-        svc = PackageService(_auto_register=False)
-        assert "Error" in svc.publish(name="p", owner="o")
+        assert "Error" in package.publish(name="p", owner="o")
 
     def test_publish_deb_infers_owner(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         f = tmp_path / "pkg.deb"
         f.write_bytes(b"deb")
         mock_forgejo_client.put_file.return_value = None
         with patch("forge.services.package.get_default_owner", return_value="org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.publish_deb(file=str(f))
+            result = package.publish_deb(file=str(f))
             assert "Published" in result
 
     def test_publish_crate_infers_owner(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         crate_path = _make_crate(tmp_path)
         mock_forgejo_client.put_file.return_value = None
         with patch("forge.services.package.get_default_owner", return_value="org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.publish_crate(file=crate_path)
+            result = package.publish_crate(file=crate_path)
             assert "Published" in result
 
     def test_download_infers_owner(self, mock_forgejo_client, tmp_path) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.download_file.return_value = b"content"
         with patch("forge.services.package.get_default_owner", return_value="org"):
-            svc = PackageService(_auto_register=False)
-            result = svc.download(
+            result = package.download(
                 name="pkg", version="1.0", filename="file.bin", output=str(tmp_path / "out")
             )
             assert "Downloaded" in result
 
     def test_download_missing_name(self) -> None:
-        svc = PackageService(_auto_register=False)
-        assert "Error" in svc.download(version="1.0", filename="f", owner="o")
+        assert "Error" in package.download(version="1.0", filename="f", owner="o")
 
     def test_download_missing_version(self) -> None:
-        svc = PackageService(_auto_register=False)
-        assert "Error" in svc.download(name="p", filename="f", owner="o")
+        assert "Error" in package.download(name="p", filename="f", owner="o")
 
 
 def _make_crate(tmp_path, name="my-crate", version="0.1.0", extra_toml=""):  # type: ignore[no-untyped-def]
