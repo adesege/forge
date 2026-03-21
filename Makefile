@@ -52,11 +52,15 @@ test-unit: ## Run unit tests only
 
 
 .PHONY: test-bdd
-test-bdd: ## Run BDD/Gherkin feature tests
-	$(BEHAVE) features/
+test-bdd: ## Run BDD/Gherkin feature tests (non-integration)
+	$(BEHAVE) features/ --tags="~@integration"
+
+.PHONY: test-integration
+test-integration: ## Run integration BDD tests (requires podman/docker)
+	$(BEHAVE) features/ --tags="@integration"
 
 .PHONY: test-all
-test-all: test test-bdd ## Run unit + BDD tests
+test-all: test test-bdd ## Run unit + BDD tests (excludes integration)
 
 
 .PHONY: coverage
