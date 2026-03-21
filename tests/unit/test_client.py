@@ -184,3 +184,82 @@ class TestGetClient:
             c1 = get_client()
             c2 = get_client()
             assert c1 is c2
+
+    def test_get_client_from_config(self) -> None:
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch(
+                "forge.config.load_config",
+                return_value={
+                    "forgejo": {"url": "https://git.test.com", "token": "cfgtok"},
+                },
+            ),
+        ):
+            client = get_client()
+            assert isinstance(client, ForgejoClient)
+
+    def test_get_client_from_op(self) -> None:
+        with (
+            patch.dict(
+                "os.environ",
+                {"FORGE_FORGEJO__URL": "https://git.test.com"},
+                clear=True,
+            ),
+            patch(
+                "forge.config.load_config",
+                return_value={"forgejo": {"token_op_ref": "op://v/i/f"}},
+            ),
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_run.return_value = MagicMock(returncode=0, stdout="op-tok\n")
+            client = get_client()
+            assert isinstance(client, ForgejoClient)
+
+
+class TestClientMethods:
+    """Additional tests for ForgejoClient methods."""
+
+    def test_get_raw(self, client: ForgejoClient) -> None:
+        mock_resp = httpx.Response(200, text="raw content")
+        client._client = MagicMock()
+        client._client.get.return_value = mock_resp
+        result = client.get_raw("/repos/o/r/pulls/1.diff")
+        assert result == "raw content"
+
+    def test_get_raw_error(self, client: ForgejoClient) -> None:
+        mock_resp = httpx.Response(404, json={"message": "not found"})
+        client._client = MagicMock()
+        client._client.get.return_value = mock_resp
+        with pytest.raises(ForgejoNotFoundError):
+            client.get_raw("/repos/o/r/pulls/1.diff")
+
+    def test_put_file(self, client: ForgejoClient) -> None:
+        mock_resp = httpx.Response(201, json={"id": 1})
+        client._client = MagicMock()
+        client._client.put.return_value = mock_resp
+        result = client.put_file("/api/packages/o/generic/pkg/1.0/file.bin", content=b"data")
+        assert result == {"id": 1}
+
+    def test_download_file(self, client: ForgejoClient) -> None:
+        mock_resp = httpx.Response(200, content=b"binary-data")
+        client._client = MagicMock()
+        client._client.get.return_value = mock_resp
+        result = client.download_file("/api/packages/o/generic/pkg/1.0/file.bin")
+        assert result == b"binary-data"
+
+    def test_download_file_error(self, client: ForgejoClient) -> None:
+        mock_resp = httpx.Response(404, json={"message": "not found"})
+        client._client = MagicMock()
+        client._client.get.return_value = mock_resp
+        with pytest.raises(ForgejoNotFoundError):
+            client.download_file("/api/packages/o/generic/pkg/1.0/file.bin")
+
+    def test_close(self, client: ForgejoClient) -> None:
+        client._client = MagicMock()
+        client.close()
+        client._client.close.assert_called_once()
+
+    def test_extract_message_non_json(self, client: ForgejoClient) -> None:
+        response = httpx.Response(500, text="Internal Server Error")
+        msg = client._extract_message(response)
+        assert msg == "Internal Server Error"
