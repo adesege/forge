@@ -379,6 +379,15 @@ def pr_diff(number: int, owner: str, repo_name: str) -> None:
     click.echo(pr.diff(number=number, owner=owner, repo=repo_name))
 
 
+@pr_group.command("checks")
+@click.option("--number", default=0, type=int, help="PR number")
+@click.option("--owner", default="", help="Repository owner")
+@click.option("--repo", "repo_name", default="", help="Repository name")
+def pr_checks(number: int, owner: str, repo_name: str) -> None:
+    """View CI check status and step details for a pull request."""
+    click.echo(pr.checks(number=number, owner=owner, repo=repo_name))
+
+
 @pr_group.command("review")
 @click.option("--number", default=0, type=int, help="PR number")
 @click.option("--body", default="", help="Review body")

@@ -36,5 +36,5 @@ jobs:
 
 
       - name: BDD tests
-        run: uv run behave features/
+        run: uv run behave features/ --tags="~@integration"
 

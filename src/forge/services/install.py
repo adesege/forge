@@ -144,7 +144,7 @@ def debian(owner: str = "", codename: str = "") -> str:
             text=True,
             check=True,
         ).stdout.strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except subprocess.CalledProcessError, FileNotFoundError:
         arch = "amd64"
 
     # [trusted=yes] because Forgejo package registries are not GPG-signed

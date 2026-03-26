@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
+import re
 from typing import Any
 
 from forge.forgejo import get_client
 from forge.forgejo.context import get_repo_context
-from forge.forgejo.formatting import format_pr, format_table
+from forge.forgejo.formatting import format_checks, format_pr, format_table
 
 
 def list_prs(
@@ -146,3 +148,94 @@ def review(
         payload["body"] = body
     data = client.post(f"/repos/{owner}/{repo}/pulls/{number}/reviews", json=payload)
     return f"Submitted {event} review on PR #{number} (review #{data.get('id', '?')})"
+
+
+def _scrape_steps(html: str) -> list[dict[str, Any]]:
+    """Extract step details from Forgejo action run HTML.
+
+    The web UI embeds job data in a ``data-initial-post-response`` attribute
+    as a JSON object.  We parse that to get step names, statuses, and log
+    lines.
+    """
+    match = re.search(r'data-initial-post-response="([^"]*)"', html)
+    if not match:
+        return []
+    raw = match.group(1).replace("&quot;", '"').replace("&amp;", "&")
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError, TypeError:
+        return []
+    steps = data.get("state", {}).get("run", {}).get("steps", [])
+    result: list[dict[str, Any]] = []
+    for step in steps:
+        entry: dict[str, Any] = {
+            "name": step.get("name", ""),
+            "status": step.get("status", "unknown"),
+            "duration": step.get("duration", ""),
+        }
+        log_lines = step.get("logLines", [])
+        if log_lines:
+            entry["log"] = "\n".join(
+                line.get("message", "") for line in log_lines if isinstance(line, dict)
+            )
+        result.append(entry)
+    return result
+
+
+def checks(number: int = 0, owner: str = "", repo: str = "") -> str:
+    """View CI check status and step details for a pull request."""
+    if not owner or not repo:
+        owner, repo = get_repo_context()
+    if not number:
+        return "Error: --number is required."
+    client = get_client()
+
+    # Get PR to find head SHA
+    pr_data = client.get(f"/repos/{owner}/{repo}/pulls/{number}")
+    head_sha = pr_data.get("head", {}).get("sha", "")
+    if not head_sha:
+        return f"PR #{number} has no head commit SHA."
+
+    # Get commit statuses
+    statuses = client.get(f"/repos/{owner}/{repo}/statuses/{head_sha}")
+    if not isinstance(statuses, list):
+        statuses = []
+
+    # Try to get action runs for this repo to find runs matching the SHA
+    runs: list[dict[str, Any]] = []
+    try:
+        run_data = client.get(
+            f"/repos/{owner}/{repo}/actions/tasks",
+            params={"limit": 20},
+        )
+        if isinstance(run_data, dict):
+            for wf_run in run_data.get("workflow_runs", []):
+                if wf_run.get("head_sha") == head_sha:
+                    runs.append(wf_run)
+    except Exception:
+        pass
+
+    # Scrape step details from the web UI for each run
+    run_details: list[dict[str, Any]] = []
+    for status in statuses:
+        target_url = status.get("target_url", "")
+        detail: dict[str, Any] = {
+            "context": status.get("context", ""),
+            "state": status.get("status", ""),
+            "description": status.get("description", ""),
+            "target_url": target_url,
+            "steps": [],
+        }
+        if target_url:
+            # Extract the run path from the target URL
+            # e.g. https://host/owner/repo/actions/runs/123
+            path_match = re.search(r"(/[^/]+/[^/]+/actions/runs/\d+)", target_url)
+            if path_match:
+                try:
+                    html = client.get_html(path_match.group(1))
+                    detail["steps"] = _scrape_steps(html)
+                except Exception:
+                    pass
+        run_details.append(detail)
+
+    return format_checks(number, head_sha, run_details)

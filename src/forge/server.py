@@ -180,6 +180,13 @@ def create_mcp() -> FastMCP:
     def pr_diff(number: int = 0, owner: str = "", repo_name: str = "") -> str:
         return pr.diff(number=number, owner=owner, repo=repo_name)
 
+    @mcp.tool(
+        name="pr_checks",
+        description="View CI check status, step details, and failure logs for a pull request",
+    )
+    def pr_checks(number: int = 0, owner: str = "", repo_name: str = "") -> str:
+        return pr.checks(number=number, owner=owner, repo=repo_name)
+
     @mcp.tool(name="pr_review", description="Submit a review on a pull request")
     def pr_review(
         number: int = 0,
