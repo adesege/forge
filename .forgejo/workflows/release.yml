@@ -12,6 +12,8 @@ jobs:
     # Skip if this push is already a release commit (prevents infinite loop)
     if: "!startsWith(github.event.head_commit.message, 'release: v')"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,7 +23,7 @@ jobs:
         run: |
           git config user.name "forgejo-actions"
           git config user.email "actions@forgejo.local"
-          git remote set-url origin "https://token:${{ secrets.PUBLISH_TOKEN }}@${{ env.FORGEJO_HOST }}/${{ github.repository }}.git"
+          git remote set-url origin "https://any:${{ github.token }}@${{ env.FORGEJO_HOST }}/${{ github.repository }}.git"
 
       - name: Bump patch version, commit, and tag
         run: |
