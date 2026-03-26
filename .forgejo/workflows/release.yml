@@ -1,0 +1,35 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    # Skip if this push is already a release commit (prevents infinite loop)
+    if: "!startsWith(github.event.head_commit.message, 'release: v')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PUBLISH_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "forgejo-actions"
+          git config user.email "actions@forgejo.local"
+
+      - name: Bump patch version, commit, and tag
+        run: |
+          CURRENT=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          PATCH=$((PATCH + 1))
+          NEW="$MAJOR.$MINOR.$PATCH"
+          sed -i "s/^version = \".*\"/version = \"$NEW\"/" pyproject.toml
+          echo "Bumping $CURRENT → $NEW"
+          git add pyproject.toml
+          git commit -m "release: v$NEW"
+          git tag -a "v$NEW" -m "Release v$NEW"
+
+      - name: Push release commit and tag
+        run: git push origin main --tags
