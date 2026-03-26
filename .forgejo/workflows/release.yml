@@ -6,6 +6,7 @@ on:
 
 env:
   FORGEJO_HOST: git.app.home.southroute.com
+  PACKAGE_OWNER: southroute
 
 jobs:
   release:
@@ -14,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,6 +28,7 @@ jobs:
           git remote set-url origin "https://any:${{ github.token }}@${{ env.FORGEJO_HOST }}/${{ github.repository }}.git"
 
       - name: Bump patch version, commit, and tag
+        id: version
         run: |
           CURRENT=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
@@ -33,9 +36,47 @@ jobs:
           NEW="$MAJOR.$MINOR.$PATCH"
           sed -i "s/^version = \".*\"/version = \"$NEW\"/" pyproject.toml
           echo "Bumping $CURRENT → $NEW"
+          echo "VERSION=$NEW" >> "$GITHUB_OUTPUT"
           git add pyproject.toml
           git commit -m "release: v$NEW"
           git tag -a "v$NEW" -m "Release v$NEW"
 
       - name: Push release commit and tag
         run: git push origin main --tags
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Build Python package
+        run: uv build
+
+      - name: Publish to Forgejo PyPI
+        run: |
+          uv publish \
+            --publish-url "https://${FORGEJO_HOST}/api/packages/${PACKAGE_OWNER}/pypi" \
+            --token "${{ secrets.PUBLISH_TOKEN }}"
+
+      - name: Install Debian build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends dpkg-dev fakeroot lintian
+
+      - name: Build Debian package
+        run: make build-deb VERSION=${{ steps.version.outputs.VERSION }}
+
+      - name: Upload to Forgejo Debian registry
+        run: |
+          DEB_FILE=$(ls dist/*.deb | head -1)
+          curl --fail -X PUT \
+            -H "Authorization: token ${{ secrets.PUBLISH_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --upload-file "${DEB_FILE}" \
+            "https://${FORGEJO_HOST}/api/packages/${PACKAGE_OWNER}/debian/pool/trixie/main/upload"
