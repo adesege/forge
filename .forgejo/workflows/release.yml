@@ -80,3 +80,11 @@ jobs:
             -H "Content-Type: application/octet-stream" \
             --upload-file "${DEB_FILE}" \
             "https://${FORGEJO_HOST}/api/packages/${PACKAGE_OWNER}/debian/pool/trixie/main/upload"
+
+      - name: Link package to repository
+        run: |
+          REPO_NAME=$(basename "${{ github.repository }}")
+          PKG_NAME=$(dpkg-deb -f dist/*.deb Package)
+          curl --fail -X POST \
+            -H "Authorization: token ${{ secrets.PUBLISH_TOKEN }}" \
+            "https://${FORGEJO_HOST}/api/v1/packages/${PACKAGE_OWNER}/debian/${PKG_NAME}/-/link/${REPO_NAME}"
