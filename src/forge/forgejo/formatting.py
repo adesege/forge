@@ -172,6 +172,48 @@ def format_package(pkg: dict[str, Any]) -> str:
     return _render(lines)
 
 
+def format_run(data: dict[str, Any]) -> str:
+    """Format action run state info (from web UI response)."""
+    lines = Text()
+    state = data.get("state", {})
+    steps = state.get("steps", [])
+    if not steps:
+        return format_json(data)
+    for i, step in enumerate(steps):
+        status = step.get("status", "unknown")
+        name = step.get("name", f"Step {i}")
+        style = "green" if status == "success" else "red" if status == "failure" else "yellow"
+        lines.append(f"  [{status:>10}] ", style=style)
+        lines.append(f"{name}\n")
+    return _render(lines)
+
+
+def format_run_detail(run: dict[str, Any]) -> str:
+    """Format a single action run for detailed view."""
+    lines = Text()
+    index = run.get("index_in_repo", run.get("id", "?"))
+    title = run.get("title", "")
+    status = run.get("status", "")
+    style = "green" if status == "success" else "red" if status == "failure" else "yellow"
+    lines.append(f"Run #{index} ", style="bold cyan")
+    lines.append(title, style="bold")
+    lines.append(f"  [{status}]", style=style)
+    lines.append("\n")
+    lines.append(f"\nEvent:       {run.get('event', '')}\n")
+    lines.append(f"Workflow:    {run.get('workflow_id', '')}\n")
+    lines.append(f"Ref:         {run.get('prettyref', '')}\n")
+    lines.append(f"SHA:         {run.get('commit_sha', '')[:12]}\n")
+    trigger_user = run.get("trigger_user", {})
+    if trigger_user:
+        lines.append(f"Triggered:   {trigger_user.get('login', 'unknown')}\n")
+    lines.append(f"Started:     {run.get('started', '')}\n")
+    lines.append(f"Stopped:     {run.get('stopped', '')}\n")
+    html_url = run.get("html_url", "")
+    if html_url:
+        lines.append(f"URL:         {html_url}\n")
+    return _render(lines)
+
+
 def format_org(org: dict[str, Any]) -> str:
     """Format a single organization for detailed view."""
     lines = Text()

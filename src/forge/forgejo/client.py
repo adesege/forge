@@ -149,6 +149,22 @@ class ForgejoClient:
             self._handle_response(resp)
         return resp.content
 
+    def post_web(self, path: str, json: dict[str, Any] | None = None) -> Any:
+        """Send a POST to a non-API (web UI) endpoint and return parsed JSON.
+
+        The path is relative to the base URL (not /api/v1).
+        """
+        url = self._base_url + path
+        resp = self._client.post(
+            url,
+            json=json,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"token {self._token}",
+            },
+        )
+        return self._handle_response(resp)
+
     def close(self) -> None:
         """Close the underlying HTTP client."""
         self._client.close()

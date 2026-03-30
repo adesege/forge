@@ -24,7 +24,18 @@ from forge.secrets import (
 from forge.secrets import (
     status as secrets_status,
 )
-from forge.services import auth, completion, install, issue, org, package, pr, release, repo
+from forge.services import (
+    actions,
+    auth,
+    completion,
+    install,
+    issue,
+    org,
+    package,
+    pr,
+    release,
+    repo,
+)
 
 
 def setup_logging(level: str = "INFO", service_name: str = "") -> None:
@@ -99,6 +110,59 @@ def auth_status() -> None:
 def auth_token() -> None:
     """Display the configured API token (masked)."""
     click.echo(auth.token())
+
+
+# ── CI / Actions ─────────────────────────────────────────────────────────────
+
+
+@main.group("ci")
+def ci_group() -> None:
+    """CI/CD action runs and logs."""
+
+
+@ci_group.command("runs")
+@click.option("--owner", default="", help="Repository owner")
+@click.option("--repo", "repo_name", default="", help="Repository name")
+@click.option("--status", default="", help="Filter by status (success/failure/running/waiting)")
+@click.option("--event", default="", help="Filter by event (push/pull_request/workflow_dispatch)")
+@click.option("--limit", default=30, help="Max results")
+@click.option("--page", default=1, help="Page number")
+def ci_runs(owner: str, repo_name: str, status: str, event: str, limit: int, page: int) -> None:
+    """List action runs."""
+    click.echo(
+        actions.list_runs(
+            owner=owner, repo=repo_name, status=status, event=event, limit=limit, page=page
+        )
+    )
+
+
+@ci_group.command("view")
+@click.option("--run-id", default=0, type=int, help="Action run ID")
+@click.option("--owner", default="", help="Repository owner")
+@click.option("--repo", "repo_name", default="", help="Repository name")
+def ci_view(run_id: int, owner: str, repo_name: str) -> None:
+    """View action run details."""
+    click.echo(actions.view_run(run_id=run_id, owner=owner, repo=repo_name))
+
+
+@ci_group.command("log")
+@click.option("--run-id", default=0, type=int, help="Action run ID")
+@click.option("--job", default=0, type=int, help="Job index (default: 0)")
+@click.option("--step", default=0, type=int, help="Step index to show logs for")
+@click.option("--owner", default="", help="Repository owner")
+@click.option("--repo", "repo_name", default="", help="Repository name")
+def ci_log(run_id: int, job: int, step: int, owner: str, repo_name: str) -> None:
+    """Get log output for a CI run step."""
+    click.echo(actions.log(run_id=run_id, job=job, step=step, owner=owner, repo=repo_name))
+
+
+@ci_group.command("status")
+@click.option("--ref", default="", help="Branch, tag, or commit SHA")
+@click.option("--owner", default="", help="Repository owner")
+@click.option("--repo", "repo_name", default="", help="Repository name")
+def ci_status(ref: str, owner: str, repo_name: str) -> None:
+    """Get commit statuses (CI checks) for a ref."""
+    click.echo(actions.commit_status(ref=ref, owner=owner, repo=repo_name))
 
 
 # ── Completion ───────────────────────────────────────────────────────────────

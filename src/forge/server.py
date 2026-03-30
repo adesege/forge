@@ -8,12 +8,52 @@ from __future__ import annotations
 from fastmcp import FastMCP
 
 from forge import secrets
-from forge.services import auth, completion, install, issue, org, package, pr, release, repo
+from forge.services import (
+    actions,
+    auth,
+    completion,
+    install,
+    issue,
+    org,
+    package,
+    pr,
+    release,
+    repo,
+)
 
 
 def create_mcp() -> FastMCP:
     """Create the FastMCP server with service tools."""
     mcp = FastMCP("forge")
+
+    # ── CI / Actions ─────────────────────────────────────────────────────
+
+    @mcp.tool(name="ci_runs", description="List CI/CD action runs for a repository")
+    def ci_runs(
+        owner: str = "",
+        repo_name: str = "",
+        status: str = "",
+        event: str = "",
+        limit: int = 30,
+        page: int = 1,
+    ) -> str:
+        return actions.list_runs(
+            owner=owner, repo=repo_name, status=status, event=event, limit=limit, page=page
+        )
+
+    @mcp.tool(name="ci_view", description="View action run details")
+    def ci_view(run_id: int = 0, owner: str = "", repo_name: str = "") -> str:
+        return actions.view_run(run_id=run_id, owner=owner, repo=repo_name)
+
+    @mcp.tool(name="ci_log", description="Get log output for a CI run step")
+    def ci_log(
+        run_id: int = 0, job: int = 0, step: int = 0, owner: str = "", repo_name: str = ""
+    ) -> str:
+        return actions.log(run_id=run_id, job=job, step=step, owner=owner, repo=repo_name)
+
+    @mcp.tool(name="ci_status", description="Get commit statuses (CI checks) for a ref")
+    def ci_status(ref: str = "", owner: str = "", repo_name: str = "") -> str:
+        return actions.commit_status(ref=ref, owner=owner, repo=repo_name)
 
     # ── Auth ─────────────────────────────────────────────────────────────
 
