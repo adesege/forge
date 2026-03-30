@@ -87,6 +87,20 @@ class ForgejoClient:
             self._handle_response(resp)
         return resp.text
 
+    def get_html(self, path: str) -> str:
+        """Fetch a web UI page (non-API) and return the HTML body."""
+        url = self._base_url + path
+        resp = self._client.get(
+            url,
+            headers={
+                "Accept": "text/html",
+                "Authorization": f"token {self._token}",
+            },
+        )
+        if resp.status_code >= 400:
+            self._handle_response(resp)
+        return resp.text
+
     def get_paginated(
         self,
         path: str,

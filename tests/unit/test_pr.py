@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from unittest.mock import patch
 
 from forge.services import pr
@@ -179,3 +180,121 @@ class TestPullRequestService:
         mock_forgejo_client.post.return_value = {"id": 1}
         result = pr.review(number=1, body="LGTM", event="COMMENT", owner="o", repo="r")
         assert "COMMENT" in result
+
+    def test_checks_no_number(self) -> None:
+        result = pr.checks(owner="o", repo="r")
+        assert "Error" in result
+
+    def test_checks_no_head_sha(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = {
+            "head": {"sha": ""},
+        }
+        result = pr.checks(number=1, owner="o", repo="r")
+        assert "no head commit SHA" in result
+
+    def test_checks_no_statuses(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.side_effect = [
+            {"head": {"sha": "abc123def456"}},  # PR data
+            [],  # statuses
+            {"workflow_runs": []},  # action runs
+        ]
+        result = pr.checks(number=1, owner="o", repo="r")
+        assert "PR #1" in result
+        assert "No checks found" in result
+
+    def test_checks_with_statuses(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.side_effect = [
+            {"head": {"sha": "abc123def456"}},  # PR data
+            [
+                {
+                    "context": "CI / lint-and-test",
+                    "status": "success",
+                    "description": "All checks passed",
+                    "target_url": "",
+                },
+            ],
+            {"workflow_runs": []},  # action runs
+        ]
+        result = pr.checks(number=5, owner="o", repo="r")
+        assert "PR #5" in result
+        assert "abc123def456"[:12] in result
+        assert "CI / lint-and-test" in result
+        assert "success" in result
+
+    def test_checks_with_steps(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        step_data = {
+            "state": {
+                "run": {
+                    "steps": [
+                        {
+                            "name": "Lint",
+                            "status": "failure",
+                            "duration": "5s",
+                            "logLines": [{"message": "error: clippy failed"}],
+                        }
+                    ]
+                }
+            }
+        }
+        raw = json.dumps(step_data)
+        html = f'<div data-initial-post-response="{raw.replace(chr(34), "&quot;")}"></div>'
+        mock_forgejo_client.get.side_effect = [
+            {"head": {"sha": "abc123def456"}},
+            [
+                {
+                    "context": "CI",
+                    "status": "failure",
+                    "description": "",
+                    "target_url": "https://host/o/r/actions/runs/42",
+                },
+            ],
+            {"workflow_runs": []},
+        ]
+        mock_forgejo_client.get_html.return_value = html
+        result = pr.checks(number=1, owner="o", repo="r")
+        assert "CI" in result
+
+    def test_checks_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.side_effect = [
+            {"head": {"sha": "abc123def456"}},
+            [],
+            {"workflow_runs": []},
+        ]
+        with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
+            result = pr.checks(number=1)
+            assert "No checks found" in result
+
+    def test_scrape_steps_empty_html(self) -> None:
+        from forge.services.pr import _scrape_steps
+
+        assert _scrape_steps("") == []
+        assert _scrape_steps("<div>no data</div>") == []
+
+    def test_scrape_steps_valid(self) -> None:
+        import json
+
+        from forge.services.pr import _scrape_steps
+
+        data = {
+            "state": {
+                "run": {
+                    "steps": [
+                        {"name": "Build", "status": "success", "duration": "10s"},
+                        {
+                            "name": "Test",
+                            "status": "failure",
+                            "duration": "3s",
+                            "logLines": [{"message": "FAIL test_foo"}],
+                        },
+                    ]
+                }
+            }
+        }
+        raw_json = json.dumps(data)
+        html = f'<div data-initial-post-response="{raw_json.replace(chr(34), "&quot;")}"></div>'
+        steps = _scrape_steps(html)
+        assert len(steps) == 2
+        assert steps[0]["name"] == "Build"
+        assert steps[0]["status"] == "success"
+        assert steps[1]["name"] == "Test"
+        assert "FAIL test_foo" in steps[1]["log"]

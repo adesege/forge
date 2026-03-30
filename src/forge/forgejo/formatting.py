@@ -147,6 +147,54 @@ def format_user(user: dict[str, Any]) -> str:
     return _render(lines)
 
 
+def format_checks(pr_number: int, head_sha: str, runs: list[dict[str, Any]]) -> str:
+    """Format CI check results for a pull request."""
+    lines = Text()
+    lines.append(f"Checks for PR #{pr_number}", style="bold magenta")
+    lines.append(f"  (commit {head_sha[:12]})\n", style="dim")
+
+    if not runs:
+        lines.append("\nNo checks found.\n")
+        return _render(lines)
+
+    for run in runs:
+        state = run.get("state", "unknown")
+        style = {"success": "green", "pending": "yellow", "failure": "red", "error": "red"}.get(
+            state, "white"
+        )
+        context = run.get("context", "unknown")
+        lines.append(f"\n  [{state}] ", style=style)
+        lines.append(context, style="bold")
+        desc = run.get("description", "")
+        if desc:
+            lines.append(f"  — {desc}", style="dim")
+        lines.append("\n")
+
+        steps = run.get("steps", [])
+        for step in steps:
+            step_status = step.get("status", "unknown")
+            step_style = {
+                "success": "green",
+                "running": "yellow",
+                "failure": "red",
+                "skipped": "dim",
+            }.get(step_status, "white")
+            duration = step.get("duration", "")
+            dur_str = f" ({duration})" if duration else ""
+            lines.append(f"    [{step_status}] ", style=step_style)
+            lines.append(f"{step.get('name', '')}{dur_str}\n")
+
+            log = step.get("log", "")
+            if log and step_status == "failure":
+                # Show last 30 lines of log for failed steps
+                log_lines = log.strip().split("\n")
+                tail = log_lines[-30:]
+                for ll in tail:
+                    lines.append(f"      {ll}\n", style="dim")
+
+    return _render(lines)
+
+
 def format_json(data: Any) -> str:
     """Pretty-print JSON data."""
     return json.dumps(data, indent=2, default=str)
