@@ -82,8 +82,8 @@ def log(
     num_steps = max(step + 1, 10)
     log_cursors = [{"step": i, "cursor": None, "expanded": i == step} for i in range(num_steps)]
 
-    data = client.post_web(
-        f"/{owner}/{repo}/actions/runs/{run_id}/jobs/{job}/attempt/1",
+    data = client.post_web_authenticated(
+        f"/{owner}/{repo}/actions/runs/{run_id}/jobs/{job}",
         json={"logCursors": log_cursors},
     )
 
