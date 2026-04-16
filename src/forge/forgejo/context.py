@@ -219,8 +219,9 @@ def get_repo_context() -> tuple[str, str]:
     longer points to the configured Forgejo instance, the selection is
     cleared and the user is prompted again.
 
-    Supports both SSH and HTTPS URL formats:
+    Supports SSH and HTTPS URL formats:
       - git@host:owner/repo.git
+      - ssh://git@host/owner/repo.git
       - https://host/owner/repo.git
       - https://host/owner/repo
 
@@ -266,10 +267,17 @@ def parse_remote_url(url: str) -> tuple[str, str]:
     Raises:
         ValueError: If the URL format is not recognized.
     """
-    # SSH: git@host:owner/repo.git
+    # SSH SCP-style: git@host:owner/repo.git
     ssh_match = re.match(r"^[\w.-]+@[\w.-]+:([\w._-]+)/([\w._-]+?)(?:\.git)?$", url)
     if ssh_match:
         return ssh_match.group(1), ssh_match.group(2)
+
+    # SSH scheme: ssh://git@host[:port]/owner/repo.git
+    ssh_scheme_match = re.match(
+        r"^ssh://[\w.-]+@[\w.-]+(?::\d+)?/([\w._-]+)/([\w._-]+?)(?:\.git)?$", url
+    )
+    if ssh_scheme_match:
+        return ssh_scheme_match.group(1), ssh_scheme_match.group(2)
 
     # HTTPS: https://host/owner/repo.git
     https_match = re.match(r"^https?://[\w.-]+(?::\d+)?/([\w._-]+)/([\w._-]+?)(?:\.git)?$", url)

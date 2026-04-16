@@ -44,6 +44,21 @@ class TestParseRemoteUrl:
     def test_http_url(self) -> None:
         assert parse_remote_url("http://git.example.com/owner/repo.git") == ("owner", "repo")
 
+    def test_ssh_scheme_url(self) -> None:
+        assert parse_remote_url("ssh://git@git.example.com/owner/repo.git") == (
+            "owner",
+            "repo",
+        )
+
+    def test_ssh_scheme_url_no_dot_git(self) -> None:
+        assert parse_remote_url("ssh://git@git.example.com/owner/repo") == ("owner", "repo")
+
+    def test_ssh_scheme_url_with_port(self) -> None:
+        assert parse_remote_url("ssh://git@git.example.com:22/owner/repo.git") == (
+            "owner",
+            "repo",
+        )
+
     def test_invalid_url_raises(self) -> None:
         with pytest.raises(ValueError, match="Cannot parse"):
             parse_remote_url("not-a-url")
