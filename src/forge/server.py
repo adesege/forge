@@ -237,6 +237,15 @@ def create_mcp() -> FastMCP:
     ) -> str:
         return pr.review(number=number, body=body, event=event, owner=owner, repo=repo_name)
 
+    @mcp.tool(name="pr_react", description="Add a reaction to a PR comment")
+    def pr_react(
+        comment_id: str = "",
+        reaction: str = "+1",
+        owner: str = "",
+        repo_name: str = "",
+    ) -> str:
+        return pr.react(comment_id=comment_id, reaction=reaction, owner=owner, repo=repo_name)
+
     # ── Release ──────────────────────────────────────────────────────────
 
     @mcp.tool(name="release_list", description="List releases")
