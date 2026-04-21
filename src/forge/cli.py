@@ -463,6 +463,20 @@ def pr_review(number: int, body: str, event: str, owner: str, repo_name: str) ->
     click.echo(pr.review(number=number, body=body, event=event, owner=owner, repo=repo_name))
 
 
+@pr_group.command("react")
+@click.option("--comment-id", default="", help="Comment ID (number or Forgejo Message-ID)")
+@click.option(
+    "--reaction",
+    default="+1",
+    help="Reaction type (+1, -1, laugh, hooray, confused, heart, rocket, eyes)",
+)
+@click.option("--owner", default="", help="Repository owner")
+@click.option("--repo", "repo_name", default="", help="Repository name")
+def pr_react(comment_id: str, reaction: str, owner: str, repo_name: str) -> None:
+    """Add a reaction to a PR comment."""
+    click.echo(pr.react(comment_id=comment_id, reaction=reaction, owner=owner, repo=repo_name))
+
+
 # ── Release ──────────────────────────────────────────────────────────────────
 
 
