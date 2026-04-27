@@ -179,6 +179,35 @@ class ForgejoClient:
         )
         return self._handle_response(resp)
 
+    def post_web_authenticated(self, path: str, json: dict[str, Any] | None = None) -> Any:
+        """POST to a web UI endpoint with session-based authentication.
+
+        Forgejo web routes on private repos don't accept bare token headers.
+        This method establishes an authenticated session by first hitting the
+        API to capture session cookies, then uses those cookies for the web
+        request.
+        """
+        with httpx.Client(timeout=30.0) as session:
+            # Establish session: hit the API to verify token and capture cookies
+            auth_resp = session.get(
+                f"{self._base_url}/api/v1/user",
+                headers={"Authorization": f"token {self._token}"},
+            )
+            if auth_resp.status_code >= 400:
+                self._handle_response(auth_resp)
+
+            # Now POST to the web endpoint using the session cookies + token
+            url = self._base_url + path
+            resp = session.post(
+                url,
+                json=json,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"token {self._token}",
+                },
+            )
+            return self._handle_response(resp)
+
     def close(self) -> None:
         """Close the underlying HTTP client."""
         self._client.close()
