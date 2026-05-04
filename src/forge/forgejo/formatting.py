@@ -6,9 +6,14 @@ import json
 from io import StringIO
 from typing import Any
 
+from rich.box import SIMPLE
 from rich.console import Console
+from rich.style import Style
 from rich.table import Table
 from rich.text import Text
+
+_ROW_EVEN = Style(bgcolor="grey11")
+_ROW_ODD = Style()
 
 
 def _render(renderable: Any) -> str:
@@ -19,6 +24,14 @@ def _render(renderable: Any) -> str:
     return buf.getvalue().rstrip()
 
 
+def _cell_value(row: dict[str, Any], key: str) -> str:
+    """Extract a display value from a row dict, handling nested objects."""
+    val = row.get(key, "")
+    if isinstance(val, dict):
+        return str(val.get("login", val.get("name", str(val))))
+    return str(val)
+
+
 def format_table(
     rows: list[dict[str, Any]],
     columns: list[tuple[str, str]],
@@ -26,16 +39,26 @@ def format_table(
 ) -> str:
     """Render a list of dicts as a Rich table.
 
+    Uses a borderless style with alternating row background colors for
+    readability.
+
     Args:
         rows: List of row dicts.
         columns: List of (key, header_label) tuples.
         title: Optional table title.
     """
-    table = Table(title=title, show_lines=False)
+    table = Table(
+        title=title,
+        box=SIMPLE,
+        show_edge=False,
+        header_style="bold",
+        expand=True,
+    )
     for _, header in columns:
         table.add_column(header)
-    for row in rows:
-        table.add_row(*[str(row.get(k, "")) for k, _ in columns])
+    for i, row in enumerate(rows):
+        style = _ROW_EVEN if i % 2 == 0 else _ROW_ODD
+        table.add_row(*[_cell_value(row, k) for k, _ in columns], style=style)
     return _render(table)
 
 

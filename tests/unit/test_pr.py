@@ -91,9 +91,70 @@ class TestPullRequestService:
         result = pr.review(number=10, body="LGTM", event="APPROVE", owner="o", repo="r")
         assert "APPROVE" in result
 
+    def test_list_owner_only(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.side_effect = [
+            [{"name": "repo-a"}, {"name": "repo-b"}],  # repos list
+            [
+                {
+                    "number": 1,
+                    "title": "PR in A",
+                    "state": "open",
+                    "user": {"login": "dev"},
+                    "updated_at": "2026-01-02",
+                }
+            ],
+            [
+                {
+                    "number": 2,
+                    "title": "PR in B",
+                    "state": "open",
+                    "user": {"login": "dev"},
+                    "updated_at": "2026-01-01",
+                }
+            ],
+        ]
+        result = pr.list_prs(owner="myorg")
+        assert "PR in A" in result
+        assert "PR in B" in result
+        assert "repo-a" in result
+        assert "repo-b" in result
+
+    def test_list_owner_only_no_repos(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.return_value = []
+        result = pr.list_prs(owner="myorg")
+        assert "No repositories found" in result
+
+    def test_list_owner_only_no_prs(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.side_effect = [
+            [{"name": "repo-a"}],  # repos list
+            [],  # no PRs in repo-a
+        ]
+        result = pr.list_prs(owner="myorg")
+        assert "No pull requests found" in result
+
+    def test_list_uses_default_owner(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        mock_forgejo_client.get.side_effect = [
+            [{"name": "repo-a"}],
+            [
+                {
+                    "number": 1,
+                    "title": "Default owner PR",
+                    "state": "open",
+                    "user": {"login": "dev"},
+                    "updated_at": "2026-01-01",
+                }
+            ],
+        ]
+        with patch("forge.services.pr.get_default_owner", return_value="default-org"):
+            result = pr.list_prs()
+            assert "Default owner PR" in result
+
     def test_list_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
-        with patch("forge.services.pr.get_repo_context", return_value=("o", "r")):
+        with (
+            patch("forge.services.pr.get_default_owner", return_value=""),
+            patch("forge.services.pr.get_repo_context", return_value=("o", "r")),
+        ):
             result = pr.list_prs()
             assert "No pull requests found" in result
 

@@ -7,8 +7,48 @@ import re
 from typing import Any
 
 from forge.forgejo import get_client
-from forge.forgejo.context import get_repo_context
+from forge.forgejo.context import get_default_owner, get_repo_context
 from forge.forgejo.formatting import format_checks, format_pr, format_table
+
+
+def _list_prs_for_owner(
+    owner: str,
+    state: str = "open",
+    limit: int = 30,
+) -> str:
+    """List pull requests across all repos for an owner."""
+    client = get_client()
+    repos = client.get(f"/users/{owner}/repos", params={"limit": 50})
+    if not repos:
+        return f"No repositories found for {owner}."
+    all_prs: list[dict[str, Any]] = []
+    for r in repos:
+        repo_name = r.get("name", "")
+        if not repo_name:
+            continue
+        prs = client.get(
+            f"/repos/{owner}/{repo_name}/pulls",
+            params={"state": state, "limit": limit},
+        )
+        if prs:
+            for p in prs:
+                p["_repo"] = repo_name
+            all_prs.extend(prs)
+    if not all_prs:
+        return f"No pull requests found for {owner} ({state})."
+    all_prs.sort(key=lambda p: p.get("updated_at", ""), reverse=True)
+    all_prs = all_prs[:limit]
+    return format_table(
+        all_prs,
+        [
+            ("_repo", "Repo"),
+            ("number", "#"),
+            ("title", "Title"),
+            ("state", "State"),
+            ("user", "Author"),
+        ],
+        title=f"Pull Requests — {owner} ({state})",
+    )
 
 
 def list_prs(
@@ -18,7 +58,16 @@ def list_prs(
     limit: int = 30,
     page: int = 1,
 ) -> str:
-    """List pull requests."""
+    """List pull requests.
+
+    When owner is given without repo, lists PRs across all repos for that owner.
+    When neither is given, owner falls back to default_owner from config; if a
+    repo still can't be determined the current git context is used.
+    """
+    if not owner:
+        owner = get_default_owner()
+    if owner and not repo:
+        return _list_prs_for_owner(owner, state=state, limit=limit)
     if not owner or not repo:
         owner, repo = get_repo_context()
     client = get_client()
