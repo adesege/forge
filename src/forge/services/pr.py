@@ -8,6 +8,7 @@ from typing import Any
 
 from forge.forgejo import get_client
 from forge.forgejo.context import get_default_owner, get_repo_context
+from forge.forgejo.exceptions import ForgejoNotFoundError
 from forge.forgejo.formatting import format_checks, format_pr, format_table
 
 
@@ -26,10 +27,13 @@ def _list_prs_for_owner(
         repo_name = r.get("name", "")
         if not repo_name:
             continue
-        prs = client.get(
-            f"/repos/{owner}/{repo_name}/pulls",
-            params={"state": state, "limit": limit},
-        )
+        try:
+            prs = client.get(
+                f"/repos/{owner}/{repo_name}/pulls",
+                params={"state": state, "limit": limit},
+            )
+        except ForgejoNotFoundError:
+            continue
         if prs:
             for p in prs:
                 p["_repo"] = repo_name

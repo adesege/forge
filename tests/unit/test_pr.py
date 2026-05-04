@@ -119,6 +119,25 @@ class TestPullRequestService:
         assert "repo-a" in result
         assert "repo-b" in result
 
+    def test_list_owner_only_skips_404_repos(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        from forge.forgejo.exceptions import ForgejoNotFoundError
+
+        mock_forgejo_client.get.side_effect = [
+            [{"name": "repo-a"}, {"name": "repo-b"}],  # repos list
+            ForgejoNotFoundError("not found"),  # repo-a returns 404
+            [
+                {
+                    "number": 2,
+                    "title": "PR in B",
+                    "state": "open",
+                    "user": {"login": "dev"},
+                    "updated_at": "2026-01-01",
+                }
+            ],
+        ]
+        result = pr.list_prs(owner="myorg")
+        assert "PR in B" in result
+
     def test_list_owner_only_no_repos(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         mock_forgejo_client.get.return_value = []
         result = pr.list_prs(owner="myorg")
