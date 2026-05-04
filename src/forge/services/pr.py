@@ -199,6 +199,59 @@ def review(
     return f"Submitted {event} review on PR #{number} (review #{data.get('id', '?')})"
 
 
+def _parse_comment_id(raw: str) -> tuple[int, str, str] | None:
+    """Parse a comment ID from a raw string.
+
+    Accepts either a bare integer or a Forgejo Message-ID format:
+      ``<owner/repo/pulls/PR/comment/COMMENT_ID@host>``
+
+    Returns ``(comment_id, owner, repo)`` or ``None`` if unparseable.
+    The owner/repo may be empty strings if only a bare integer was given.
+    """
+    raw = raw.strip().strip("<>")
+    # Try bare integer first
+    if raw.isdigit():
+        return int(raw), "", ""
+    # Try Forgejo Message-ID format: owner/repo/pulls/N/comment/ID@host
+    m = re.match(r"([^/]+/[^/]+)/(?:pulls|issues)/\d+/comment/(\d+)@", raw)
+    if m:
+        parts = m.group(1).split("/", 1)
+        return int(m.group(2)), parts[0], parts[1]
+    return None
+
+
+def react(
+    comment_id: str = "",
+    reaction: str = "+1",
+    owner: str = "",
+    repo: str = "",
+) -> str:
+    """Add a reaction to an issue/PR comment.
+
+    The ``comment_id`` can be a bare integer or a Forgejo Message-ID string
+    like ``<owner/repo/pulls/1/comment/42@host>``.  When a Message-ID is
+    given, the owner and repo are extracted automatically.
+
+    Supported reactions: +1, -1, laugh, hooray, confused, heart, rocket, eyes.
+    """
+    if not comment_id:
+        return "Error: --comment-id is required."
+    parsed = _parse_comment_id(comment_id)
+    if parsed is None:
+        return f"Error: cannot parse comment ID from: {comment_id}"
+    cid, parsed_owner, parsed_repo = parsed
+    owner = owner or parsed_owner
+    repo = repo or parsed_repo
+    if not owner or not repo:
+        owner, repo = get_repo_context()
+    client = get_client()
+    data = client.post(
+        f"/repos/{owner}/{repo}/issues/comments/{cid}/reactions",
+        json={"content": reaction},
+    )
+    return f"Reacted {data.get('content', reaction)} to comment {cid}"
+
+
 def _scrape_steps(html: str) -> list[dict[str, Any]]:
     """Extract step details from Forgejo action run HTML.
 

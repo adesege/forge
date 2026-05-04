@@ -113,7 +113,7 @@ class TestLog:
         assert "Error" in result
 
     def test_log_with_data(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web.return_value = {
+        mock_forgejo_client.post_web_authenticated.return_value = {
             "logs": {
                 "2": {
                     "lines": [
@@ -129,17 +129,17 @@ class TestLog:
         assert "All tests passed" in result
 
     def test_log_no_data(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web.return_value = None
+        mock_forgejo_client.post_web_authenticated.return_value = None
         result = actions.log(run_id=38, owner="o", repo="r")
         assert "No log data" in result
 
     def test_log_empty_logs(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web.return_value = {"logs": {}}
+        mock_forgejo_client.post_web_authenticated.return_value = {"logs": {}}
         result = actions.log(run_id=38, owner="o", repo="r")
         assert "No log data" in result
 
     def test_log_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web.return_value = {
+        mock_forgejo_client.post_web_authenticated.return_value = {
             "logs": {
                 "0": {"lines": [{"message": "hello"}]},
             },
@@ -150,7 +150,7 @@ class TestLog:
 
     def test_log_all_steps(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         """When step data for requested step is missing, return all available logs."""
-        mock_forgejo_client.post_web.return_value = {
+        mock_forgejo_client.post_web_authenticated.return_value = {
             "logs": {
                 "0": {"lines": [{"message": "line from step 0"}]},
                 "1": {"lines": [{"message": "line from step 1"}]},
@@ -162,7 +162,7 @@ class TestLog:
 
     def test_log_list_format(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         """Handle logs where step data is a plain list."""
-        mock_forgejo_client.post_web.return_value = {
+        mock_forgejo_client.post_web_authenticated.return_value = {
             "logs": {
                 "0": [
                     {"message": "line one"},
@@ -176,7 +176,7 @@ class TestLog:
 
     def test_log_state_fallback(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
         """When logs key is absent but state.steps exists, format run state."""
-        mock_forgejo_client.post_web.return_value = {
+        mock_forgejo_client.post_web_authenticated.return_value = {
             "state": {
                 "steps": [
                     {"name": "Checkout", "status": "success"},
