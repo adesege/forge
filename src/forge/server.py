@@ -45,11 +45,9 @@ def create_mcp() -> FastMCP:
     def ci_view(run_id: int = 0, owner: str = "", repo_name: str = "") -> str:
         return actions.view_run(run_id=run_id, owner=owner, repo=repo_name)
 
-    @mcp.tool(name="ci_log", description="Get log output for a CI run step")
-    def ci_log(
-        run_id: int = 0, job: int = 0, step: int = 0, owner: str = "", repo_name: str = ""
-    ) -> str:
-        return actions.log(run_id=run_id, job=job, step=step, owner=owner, repo=repo_name)
+    @mcp.tool(name="ci_log", description="Get log output for a CI run job")
+    def ci_log(run_id: int = 0, job: int = 0, owner: str = "", repo_name: str = "") -> str:
+        return actions.log(run_id=run_id, job=job, owner=owner, repo=repo_name)
 
     @mcp.tool(name="ci_status", description="Get commit statuses (CI checks) for a ref")
     def ci_status(ref: str = "", owner: str = "", repo_name: str = "") -> str:

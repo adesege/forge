@@ -101,6 +101,20 @@ class ForgejoClient:
             self._handle_response(resp)
         return resp.text
 
+    def get_web_text(self, path: str) -> str:
+        """Fetch a web UI endpoint and return the response as plain text."""
+        url = self._base_url + path
+        resp = self._client.get(
+            url,
+            headers={
+                "Accept": "text/plain",
+                "Authorization": f"token {self._token}",
+            },
+        )
+        if resp.status_code >= 400:
+            self._handle_response(resp)
+        return resp.text
+
     def get_paginated(
         self,
         path: str,

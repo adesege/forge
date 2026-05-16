@@ -113,80 +113,31 @@ class TestLog:
         assert "Error" in result
 
     def test_log_with_data(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web_authenticated.return_value = {
-            "logs": {
-                "2": {
-                    "lines": [
-                        {"message": "Step started"},
-                        {"message": "Running tests..."},
-                        {"message": "All tests passed"},
-                    ],
-                },
-            },
-        }
-        result = actions.log(run_id=38, job=0, step=2, owner="o", repo="r")
+        mock_forgejo_client.get_web_text.return_value = (
+            "Step started\nRunning tests...\nAll tests passed"
+        )
+        result = actions.log(run_id=38, job=0, owner="o", repo="r")
         assert "Running tests" in result
         assert "All tests passed" in result
 
     def test_log_no_data(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web_authenticated.return_value = None
-        result = actions.log(run_id=38, owner="o", repo="r")
-        assert "No log data" in result
-
-    def test_log_empty_logs(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web_authenticated.return_value = {"logs": {}}
+        mock_forgejo_client.get_web_text.return_value = ""
         result = actions.log(run_id=38, owner="o", repo="r")
         assert "No log data" in result
 
     def test_log_infers_context(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        mock_forgejo_client.post_web_authenticated.return_value = {
-            "logs": {
-                "0": {"lines": [{"message": "hello"}]},
-            },
-        }
+        mock_forgejo_client.get_web_text.return_value = "hello"
         with patch("forge.services.actions.get_repo_context", return_value=("o", "r")):
             result = actions.log(run_id=1)
             assert "hello" in result
 
-    def test_log_all_steps(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        """When step data for requested step is missing, return all available logs."""
-        mock_forgejo_client.post_web_authenticated.return_value = {
-            "logs": {
-                "0": {"lines": [{"message": "line from step 0"}]},
-                "1": {"lines": [{"message": "line from step 1"}]},
-            },
-        }
-        result = actions.log(run_id=38, job=0, step=5, owner="o", repo="r")
-        assert "line from step 0" in result
-        assert "line from step 1" in result
-
-    def test_log_list_format(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        """Handle logs where step data is a plain list."""
-        mock_forgejo_client.post_web_authenticated.return_value = {
-            "logs": {
-                "0": [
-                    {"message": "line one"},
-                    {"message": "line two"},
-                ],
-            },
-        }
-        result = actions.log(run_id=38, job=0, step=0, owner="o", repo="r")
-        assert "line one" in result
-        assert "line two" in result
-
-    def test_log_state_fallback(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
-        """When logs key is absent but state.steps exists, format run state."""
-        mock_forgejo_client.post_web_authenticated.return_value = {
-            "state": {
-                "steps": [
-                    {"name": "Checkout", "status": "success"},
-                    {"name": "Build", "status": "failure"},
-                ],
-            },
-        }
-        result = actions.log(run_id=38, owner="o", repo="r")
-        assert "Checkout" in result
-        assert "Build" in result
+    def test_log_url_format(self, mock_forgejo_client) -> None:  # type: ignore[no-untyped-def]
+        """Verify the correct URL pattern is used."""
+        mock_forgejo_client.get_web_text.return_value = "log output"
+        actions.log(run_id=852, job=0, owner="southroute", repo="magentia")
+        mock_forgejo_client.get_web_text.assert_called_once_with(
+            "/southroute/magentia/actions/runs/852/jobs/0/attempt/1/logs",
+        )
 
 
 class TestCommitStatus:

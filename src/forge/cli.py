@@ -148,12 +148,11 @@ def ci_view(run_id: int, owner: str, repo_name: str) -> None:
 @ci_group.command("log")
 @click.option("--run-id", default=0, type=int, help="Action run ID")
 @click.option("--job", default=0, type=int, help="Job index (default: 0)")
-@click.option("--step", default=0, type=int, help="Step index to show logs for")
 @click.option("--owner", default="", help="Repository owner")
 @click.option("--repo", "repo_name", default="", help="Repository name")
-def ci_log(run_id: int, job: int, step: int, owner: str, repo_name: str) -> None:
-    """Get log output for a CI run step."""
-    click.echo(actions.log(run_id=run_id, job=job, step=step, owner=owner, repo=repo_name))
+def ci_log(run_id: int, job: int, owner: str, repo_name: str) -> None:
+    """Get log output for a CI run job."""
+    click.echo(actions.log(run_id=run_id, job=job, owner=owner, repo=repo_name))
 
 
 @ci_group.command("status")
