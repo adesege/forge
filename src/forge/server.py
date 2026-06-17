@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from forge import secrets
 from forge.services import (
     actions,
     auth,
@@ -369,27 +368,5 @@ def create_mcp() -> FastMCP:
     @mcp.tool(name="install_debian", description="Add Forgejo Debian repository")
     def install_debian(owner: str = "", codename: str = "") -> str:
         return install.debian(owner=owner, codename=codename)
-
-    # ── Secrets ──────────────────────────────────────────────────────────
-
-    @mcp.tool(name="secrets_status", description="Check 1Password CLI availability")
-    def secrets_status() -> str:
-        return secrets.status()
-
-    @mcp.tool(name="secrets_get", description="Get a secret from 1Password")
-    def secrets_get(vault: str, title: str, field: str = "") -> str:
-        return secrets.get(vault, title, field=field)
-
-    @mcp.tool(name="secrets_create", description="Create a secret in 1Password")
-    def secrets_create(vault: str, title: str, key: str, value: str) -> str:
-        return secrets.create(vault, title, key, value)
-
-    @mcp.tool(name="secrets_ensure", description="Create or update a secret in 1Password")
-    def secrets_ensure(vault: str, title: str, key: str, value: str) -> str:
-        return secrets.ensure(vault, title, key, value)
-
-    @mcp.tool(name="secrets_remove", description="Delete a secret from 1Password")
-    def secrets_remove(vault: str, title: str) -> str:
-        return secrets.remove(vault, title)
 
     return mcp

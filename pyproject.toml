@@ -4,20 +4,18 @@ build-backend = "hatchling.build"
 
 [project]
 name = "forge"
-version = "2.3.11"
-description = "forge — a click-clop project"
+version = "2.4.0"
+description = "forge — a self-contained Forgejo CLI"
 readme = "README.md"
 requires-python = ">=3.14.0"
 license = {text = "MIT"}
 authors = [{name = "Brian Payne", email = "bwpayne@gmail.com"}]
 
 dependencies = [
-    "click>=8.1.0",
-    "git-good>=4.7.0",
-    "fastmcp>=2.0.0",
-    "structlog>=24.0.0",
-    "rich>=13.0.0",
-    "click-clop>=1.15.0",
+    "click>=8.4.0",
+    "fastmcp>=3.4.0",
+    "structlog>=26.1.0",
+    "rich>=15.0.0",
 ]
 
 [dependency-groups]
@@ -41,11 +39,6 @@ dev = [
 
 [project.scripts]
 forge = "forge.cli:main"
-
-
-[[tool.uv.index]]
-name = "forgejo"
-url = "https://git.app.home.southroute.com/api/packages/southroute/pypi/simple/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/forge"]

@@ -206,7 +206,7 @@ def clone(name: str = "", owner: str = "", directory: str = "") -> str:
 
     target = directory or name
     result = subprocess.run(
-        ["git", "clone", clone_url, target],
+        ["git", "clone", "--", clone_url, target],
         capture_output=True,
         text=True,
         check=False,

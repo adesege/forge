@@ -233,7 +233,7 @@ class TestRepoService:
         assert "Cloned alice/myrepo into myrepo/" in result
         mock_forgejo_client.get.assert_called_once_with("/repos/alice/myrepo")
         mock_run.assert_called_once_with(
-            ["git", "clone", "https://git.example.com/alice/myrepo.git", "myrepo"],
+            ["git", "clone", "--", "https://git.example.com/alice/myrepo.git", "myrepo"],
             capture_output=True,
             text=True,
             check=False,
@@ -249,7 +249,7 @@ class TestRepoService:
             result = repo.clone(name="myrepo", owner="alice", directory="custom-dir")
         assert "into custom-dir/" in result
         mock_run.assert_called_once_with(
-            ["git", "clone", "https://git.example.com/alice/myrepo.git", "custom-dir"],
+            ["git", "clone", "--", "https://git.example.com/alice/myrepo.git", "custom-dir"],
             capture_output=True,
             text=True,
             check=False,

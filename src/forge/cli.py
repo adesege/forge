@@ -9,21 +9,6 @@ import click
 import structlog
 
 from forge.config import load_config
-from forge.secrets import (
-    create as secrets_create,
-)
-from forge.secrets import (
-    ensure as secrets_ensure,
-)
-from forge.secrets import (
-    get as secrets_get,
-)
-from forge.secrets import (
-    remove as secrets_remove,
-)
-from forge.secrets import (
-    status as secrets_status,
-)
 from forge.services import (
     actions,
     auth,
@@ -718,54 +703,3 @@ def install_pypi(owner: str) -> None:
 def install_debian(owner: str, codename: str) -> None:
     """Add the Forgejo Debian repository."""
     click.echo(install.debian(owner=owner, codename=codename))
-
-
-# ── Secrets ──────────────────────────────────────────────────────────────────
-
-
-@main.group("secrets")
-def secrets_group() -> None:
-    """Manage 1Password secrets."""
-
-
-@secrets_group.command("status")
-def secrets_status_cmd() -> None:
-    """Check if 1Password CLI is available."""
-    click.echo(secrets_status())
-
-
-@secrets_group.command("get")
-@click.argument("vault")
-@click.argument("title")
-@click.option("--field", default="", help="Specific field to retrieve")
-def secrets_get_cmd(vault: str, title: str, field: str) -> None:
-    """Get a secret from 1Password."""
-    click.echo(secrets_get(vault, title, field=field))
-
-
-@secrets_group.command("create")
-@click.argument("vault")
-@click.argument("title")
-@click.argument("key")
-@click.argument("value")
-def secrets_create_cmd(vault: str, title: str, key: str, value: str) -> None:
-    """Create a new secret in 1Password."""
-    click.echo(secrets_create(vault, title, key, value))
-
-
-@secrets_group.command("ensure")
-@click.argument("vault")
-@click.argument("title")
-@click.argument("key")
-@click.argument("value")
-def secrets_ensure_cmd(vault: str, title: str, key: str, value: str) -> None:
-    """Create or update a secret in 1Password (idempotent)."""
-    click.echo(secrets_ensure(vault, title, key, value))
-
-
-@secrets_group.command("remove")
-@click.argument("vault")
-@click.argument("title")
-def secrets_remove_cmd(vault: str, title: str) -> None:
-    """Delete a secret from 1Password."""
-    click.echo(secrets_remove(vault, title))

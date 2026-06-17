@@ -7,9 +7,6 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-_DEFAULT_CONFIG_FILES = ["config.toml", "config.dev.toml", "config.local.toml"]
-_DEFAULT_ENV_FILES = [".env"]
-
 
 def load_config(
     config_path: str | Path | None = None,
@@ -18,23 +15,17 @@ def load_config(
 ) -> dict[str, Any]:
     """Load configuration from TOML files with environment variable overrides.
 
+    Configuration is read only from trusted locations — never from the current
+    working directory — so running forge inside an untrusted repository cannot
+    override your Forgejo URL/token or inject environment variables into the
+    subprocesses forge spawns.
+
     Loading order (later values win):
-    1. config.toml / config.dev.toml / config.local.toml (CWD defaults)
-    2. XDG app config: ~/.config/{app_name}/config.toml (when app_name is set)
-    3. Explicit config_path if provided
-    4. Environment variables prefixed with env_prefix
+    1. XDG app config: ~/.config/{app_name}/config.toml (+ config.local.toml), when app_name is set
+    2. Explicit config_path if provided
+    3. Environment variables prefixed with env_prefix
     """
     merged: dict[str, Any] = {}
-
-    for name in _DEFAULT_ENV_FILES:
-        path = Path(name)
-        if path.exists():
-            _load_env_file(path)
-
-    for name in _DEFAULT_CONFIG_FILES:
-        path = Path(name)
-        if path.exists():
-            merged = _deep_merge(merged, _load_toml(path))
 
     if app_name:
         xdg_config_home = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
@@ -82,22 +73,3 @@ def _set_nested(d: dict[str, Any], keys: list[str], value: str) -> None:
     for key in keys[:-1]:
         d = d.setdefault(key, {})
     d[keys[-1]] = value
-
-
-def _load_env_file(path: Path) -> None:
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if line.startswith("export "):
-                line = line[7:]
-            key, _, value = line.partition("=")
-            key = key.strip()
-            if not key or not _:
-                continue
-            value = value.strip()
-            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
-                value = value[1:-1]
-            if key not in os.environ:
-                os.environ[key] = value
